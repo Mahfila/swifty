@@ -24,7 +24,6 @@ def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE=3000000):
     test = test.sample(TESTING_SIZE)
     return train, test
 
-
 def save_dict(history, identifier):
     result_df = pd.DataFrame.from_dict(history)
     result_df.to_csv(identifier)
@@ -91,6 +90,9 @@ def get_tranformer_model_and_encoder(checkpoint):
     encoder = model.encoder.cpu()
 
     return model, encoder
+
+
+
 
 
 def get_smiles_dict(path_to_all_smiles):

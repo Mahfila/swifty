@@ -1,72 +1,130 @@
-from rdkit.Chem import MACCSkeys
-from rdkit import Chem
-from rdkit.Chem import AllChem
+import os
+import matplotlib.pyplot as plt
+import torch
+import matplotlib
 import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from sklearn.metrics import mean_absolute_error
 
 
-def mac_keys_fingerprints(smile):
-    mol = Chem.MolFromSmiles(smile)
-    fingerprint = MACCSkeys.GenMACCSKeys(mol)
-    list1 = []
-    list1[:0] = fingerprint
-    chars_array = np.array([list1])
-    chars_array = chars_array.astype('float32')
-    return chars_array.reshape((167))
+def calculate_metrics(predictions, target):
+    mse = mean_squared_error(target, predictions)
+    mae = mean_absolute_error(target, predictions)
+    rsquared = r2_score(target, predictions)
+    return mse, mae, rsquared
 
 
-def smile_fingerprint(smile):
-    ms = [Chem.MolFromSmiles(smile)]
-    fingerprint = Chem.RDKFingerprint(ms[0], 4, fpSize=2048).ToBitString()
-    list1 = []
-    list1[:0] = fingerprint
-    chars_array = np.array([list1])
-    chars_array = chars_array.astype('float32')
-    return chars_array
+def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE):
+    DATA = DATA.dropna()
+    del DATA["Unnamed: 0"]
+    train = DATA.sample(TRAINING_SIZE)
+    test = pd.concat([train, DATA]).drop_duplicates(keep=False)
+    test = test.sample(TESTING_SIZE)
+    return train, test
 
 
-def one_hot_encode(smile, char2int, dict_size):
-    list_of_chars = [char2int[char] for char in smile]
-    chars_array = np.array([list_of_chars])
+def get_data_dictionaries(DATA, TRAINING_SIZE, TESTING_SIZE):
+    DATA = DATA.dropna()
+    del DATA["Unnamed: 0"]
+    train = DATA.sample(TRAINING_SIZE)
+    test = pd.concat([train, DATA]).drop_duplicates(keep=False)
+    test = test.sample(TESTING_SIZE)
 
-    one_hot = np.zeros((chars_array.size, dict_size), dtype=np.float32)
+    whole_train_indexes = [i for i in range(TRAINING_SIZE)]
+    whole_test_indexes = [i for i in range(test.shape[0])]
+    train.reset_index(inplace=True)
 
-    one_hot[np.arange(one_hot.shape[0]), chars_array.flatten()] = 1.
+    test.reset_index(inplace=True)
 
-    one_hot = one_hot.reshape((*chars_array.shape, dict_size))
+    train["indexes"] = whole_train_indexes
+    test["indexes"] = whole_test_indexes
 
-    one_hot = one_hot.squeeze()
-    shape0 = one_hot.shape[0]
-    shape1 = one_hot.shape[1]
-    one_hot = one_hot.reshape((shape0 * shape1))
-    max_lenth = 60 * 39  # max smile by dict size
-    dim_difference = max_lenth - (shape0 * shape1)
-    features = np.pad(one_hot, (0, dim_difference), 'constant')
+    train_dict = train.set_index('indexes').T.to_dict('list')
+    test_dict = test.set_index('indexes').T.to_dict('list')
 
-    return features
-
-
-def morgan_fingerprints(smile):
-    m1 = Chem.MolFromSmiles(smile)
-    fingerprint = AllChem.GetMorganFingerprintAsBitVect(
-        m1, 1, nBits=1024).ToBitString()
-    list1 = []
-    list1[:0] = fingerprint
-    chars_array = np.array([list1])
-    chars_array = chars_array.astype('float32')
-    return chars_array.reshape((1024))
+    return train_dict, test_dict
 
 
-def morgan_fingerprints_and_one_hot(smile, char2int, dict_size):
-    one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
-    fingerprint_features = morgan_fingerprints(smile)
-    features = np.concatenate((fingerprint_features, one_hot_encoding))
-    return features
+def save_dict(history, identifier):
+    result_df = pd.DataFrame.from_dict(history)
+    result_df.to_csv(identifier)
 
 
-def morgan_fingerprints_mac_and_one_hot(smile, char2int, dict_size):
-    fingerprint_features = morgan_fingerprints(smile)
-    mac_features = mac_keys_fingerprints(smile)
-    one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
-    features = np.concatenate((fingerprint_features, one_hot_encoding))
-    features = np.concatenate((features, mac_features))
-    return features
+def plot_history(metrics_dict, identifier, identifier_results_plot):
+    fig, ax1 = plt.subplots(1)
+    fig.set_dpi(500)
+    # Plot 1
+    fig.suptitle('Training Loss-' + identifier)
+    ax1.plot(metrics_dict["training_mse"], label="training Loss")
+    ax1.legend(loc='best')
+    ax1.legend()
+    ax1.set_xlabel('Epoch')
+    ax1.set_ylabel('Loss')
+    ax1.tick_params(axis='x')
+    ax1.tick_params(axis='y')
+
+    plt.show()
+    fig.savefig(identifier_results_plot)
+
+
+def predictions_scatter_plot(test_predictions_and_target, identifier_test_scatter, identifier):
+    predictions = test_predictions_and_target["predictions"]
+    target = test_predictions_and_target["target"]
+    fig, ax1 = plt.subplots(1, 1)
+    fig.set_dpi(500)
+    fig.suptitle("Test Scatter Plot " + identifier, fontsize=10)
+    ax1.set_xlabel('Target', fontsize=10)
+    ax1.set_ylabel('Predictions', fontsize=10)
+    plt.scatter(target, predictions)
+    fig.savefig(identifier_test_scatter)
+
+
+def predictions_heat_map(test_predictions_and_target, identifier_test_heat_map, identifier):
+    predictions = test_predictions_and_target["predictions"]
+    target = test_predictions_and_target["target"]
+    fig, ax1 = plt.subplots(1, 1)
+    fig.set_dpi(500)
+    fig.suptitle("Test Heat Map " + identifier, fontsize=10)
+    ax1.set_xlabel('Target', fontsize=10)
+    ax1.set_ylabel('Predictions', fontsize=10)
+    plt.hexbin(target, predictions, gridsize=100, bins='log')
+    fig.savefig(identifier_test_heat_map)
+
+
+def save_model(net, optimizer, epoch, identifier):
+    torch.save({
+        'epoch': epoch,
+        'model_state_dict': net.state_dict(),
+        'optimizer_state_dict': optimizer.state_dict(),
+    }, identifier)
+
+
+def get_tranformer_model_and_encoder(checkpoint):
+    MAX_LENGTH = 256
+    EMBEDDING_SIZE = 512
+    NUM_LAYERS = 6
+    model = Transformer(ALPHABET_SIZE, EMBEDDING_SIZE, NUM_LAYERS).eval()
+    model = torch.nn.DataParallel(model)
+    CHECKPOINT = torch.load(CHECKPOINT, map_location=torch.device("cpu"))
+    model.load_state_dict(CHECKPOINT['state_dict'])
+    model = model.module.cpu()  # unwrap from nn.DataParallel
+    encoder = model.encoder.cpu()
+
+    return model, encoder
+
+
+def get_smiles_dict(path_to_all_smiles):
+    all_strings = ""
+    f = open(path_to_all_smiles, "r")
+    for x in f:
+        all_strings = all_strings + x
+
+    chars = tuple(set(all_strings))
+
+    int2char = dict(enumerate(chars))
+    char2int = {ch: ii for ii, ch in int2char.items()}
+    dict_size = len(char2int)
+
+    return int2char, char2int, dict_size
