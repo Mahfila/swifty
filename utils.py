@@ -16,36 +16,13 @@ def calculate_metrics(predictions, target):
     return mse, mae, rsquared
 
 
-def get_data_dictionaries(DATA, TRAINING_SIZE, TESTING_SIZE=3000000):
+def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE=3000000):
     DATA = DATA.dropna()
     del DATA["Unnamed: 0"]
     train = DATA.sample(TRAINING_SIZE)
     test = pd.concat([train, DATA]).drop_duplicates(keep=False)
     test = test.sample(TESTING_SIZE)
-
-    whole_train_indexes = [i for i in range(TRAINING_SIZE)]
-    whole_test_indexes = [i for i in range(test.shape[0])]
-    train.reset_index(inplace=True)
-    del train["index"]
-    del train["ligand_id"]
-    del train["file_id"]
-
-    test.reset_index(inplace=True)
-    del test["index"]
-    del test["ligand_id"]
-    del test["file_id"]
-
-    train["indexes"] = whole_train_indexes
-    test["indexes"] = whole_test_indexes
-
-    # saving to csv
-    train.to_csv("train.csv")
-    test.to_csv("test.csv")
-
-    train_dict = train.set_index('indexes').T.to_dict('list')
-    test_dict = test.set_index('indexes').T.to_dict('list')
-
-    return train_dict, test_dict
+    return train, test
 
 
 def save_dict(history, identifier):
@@ -102,9 +79,6 @@ def save_model(net, optimizer, epoch, identifier):
     }, identifier)
 
 
-CHECKPOINT = "/Users/abdulsalamyazid/Desktop/thesis/Projects/Predicting Docking Scores/MolecularTransformerEmbeddings-master 2/checkpoints/pretrained.ckpt"
-
-
 def get_tranformer_model_and_encoder(checkpoint):
     MAX_LENGTH = 256
     EMBEDDING_SIZE = 512
@@ -117,9 +91,6 @@ def get_tranformer_model_and_encoder(checkpoint):
     encoder = model.encoder.cpu()
 
     return model, encoder
-
-
-path_to_all_smiles = "/Users/abdulsalamyazid/Desktop/thesis/Projects/Predicting Docking Scores/Data Set/Target1/all_smiles.txt"
 
 
 def get_smiles_dict(path_to_all_smiles):
