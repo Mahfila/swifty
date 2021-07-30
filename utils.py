@@ -9,7 +9,6 @@ from sklearn.metrics import r2_score
 from sklearn.metrics import mean_absolute_error
 
 
-
 def calculate_metrics(predictions, target):
     mse = mean_squared_error(target, predictions)
     mae = mean_absolute_error(target, predictions)
@@ -58,7 +57,7 @@ def plot_history(metrics_dict, identifier, identifier_results_plot):
     fig, ax1 = plt.subplots(1)
     fig.set_dpi(500)
     # Plot 1
-    fig.suptitle('Training Loss-'+identifier)
+    fig.suptitle('Training Loss-' + identifier)
     ax1.plot(metrics_dict["training_mse"], label="training Loss")
     ax1.legend(loc='best')
     ax1.legend()
@@ -76,7 +75,7 @@ def predictions_scatter_plot(test_predictions_and_target, identifier_test_scatte
     target = test_predictions_and_target["target"]
     fig, ax1 = plt.subplots(1, 1)
     fig.set_dpi(500)
-    fig.suptitle("Test Scatter Plot "+identifier, fontsize=10)
+    fig.suptitle("Test Scatter Plot " + identifier, fontsize=10)
     ax1.set_xlabel('Target', fontsize=10)
     ax1.set_ylabel('Predictions', fontsize=10)
     plt.scatter(target, predictions)
@@ -88,7 +87,7 @@ def predictions_heat_map(test_predictions_and_target, identifier_test_heat_map, 
     target = test_predictions_and_target["target"]
     fig, ax1 = plt.subplots(1, 1)
     fig.set_dpi(500)
-    fig.suptitle("Test Heat Map "+identifier, fontsize=10)
+    fig.suptitle("Test Heat Map " + identifier, fontsize=10)
     ax1.set_xlabel('Target', fontsize=10)
     ax1.set_ylabel('Predictions', fontsize=10)
     plt.hexbin(target, predictions, gridsize=100, bins='log')

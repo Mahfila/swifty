@@ -24,9 +24,7 @@ def smile_fingerprint(smile):
     return chars_array
 
 
-
-
-def one_hot_encode(smile,char2int,dict_size):
+def one_hot_encode(smile, char2int, dict_size):
     list_of_chars = [char2int[char] for char in smile]
     chars_array = np.array([list_of_chars])
 
@@ -39,9 +37,9 @@ def one_hot_encode(smile,char2int,dict_size):
     one_hot = one_hot.squeeze()
     shape0 = one_hot.shape[0]
     shape1 = one_hot.shape[1]
-    one_hot = one_hot.reshape((shape0*shape1))
+    one_hot = one_hot.reshape((shape0 * shape1))
     max_lenth = 60 * 39  # max smile by dict size
-    dim_difference = max_lenth-(shape0*shape1)
+    dim_difference = max_lenth - (shape0 * shape1)
     features = np.pad(one_hot, (0, dim_difference), 'constant')
 
     return features
@@ -57,19 +55,18 @@ def morgan_fingerprints(smile):
     chars_array = chars_array.astype('float32')
     return chars_array.reshape((1024))
 
-def morgan_fingerprints_and_one_hot(smile,char2int,dict_size):
-	one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
-	fingerprint_features = morgan_fingerprints(smile)
-	features = np.concatenate((fingerprint_features,one_hot_encoding))
-	return features
 
-def morgan_fingerprints_mac_and_one_hot(smile,char2int,dict_size):
-	fingerprint_features = morgan_fingerprints(smile)
-	mac_features = mac_keys_fingerprints(smile)
-	one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
-	features = np.concatenate((fingerprint_features, one_hot_encoding))
-	features = np.concatenate((features, mac_features))
-	return features
+def morgan_fingerprints_and_one_hot(smile, char2int, dict_size):
+    one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
+    fingerprint_features = morgan_fingerprints(smile)
+    features = np.concatenate((fingerprint_features, one_hot_encoding))
+    return features
 
 
-
+def morgan_fingerprints_mac_and_one_hot(smile, char2int, dict_size):
+    fingerprint_features = morgan_fingerprints(smile)
+    mac_features = mac_keys_fingerprints(smile)
+    one_hot_encoding = one_hot_encode(smile, char2int, dict_size)
+    features = np.concatenate((fingerprint_features, one_hot_encoding))
+    features = np.concatenate((features, mac_features))
+    return features
