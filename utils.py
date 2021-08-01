@@ -16,13 +16,32 @@ def calculate_metrics(predictions, target):
     return mse, mae, rsquared
 
 
-def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE=3000000):
+def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE):
     DATA = DATA.dropna()
     del DATA["Unnamed: 0"]
     train = DATA.sample(TRAINING_SIZE)
     test = pd.concat([train, DATA]).drop_duplicates(keep=False)
     test = test.sample(TESTING_SIZE)
     return train, test
+
+
+def get_data_dictionaries(DATA, TRAINING_SIZE, TESTING_SIZE):
+    DATA = DATA.dropna()
+    del DATA["Unnamed: 0"]
+    train = DATA.sample(TRAINING_SIZE)
+    test = pd.concat([train, DATA]).drop_duplicates(keep=False)
+    test = test.sample(TESTING_SIZE)
+    whole_train_indexes = [i for i in range(TRAINING_SIZE)]
+    whole_test_indexes = [i for i in range(test.shape[0])]
+    train.reset_index(inplace=True)
+    test.reset_index(inplace=True)
+    train["indexes"] = whole_train_indexes
+    test["indexes"] = whole_test_indexes
+
+    train_dict = train.set_index('indexes').T.to_dict('list')
+    test_dict = test.set_index('indexes').T.to_dict('list')
+
+    return train_dict, test_dict
 
 
 def save_dict(history, identifier):
