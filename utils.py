@@ -1,14 +1,41 @@
-import os
 import matplotlib.pyplot as plt
 import torch
-import matplotlib
 import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_absolute_error
 
-asdasdsa
+
+def test_model(test_dataloader, net):
+    smiles_prediction = []
+    with torch.no_grad():
+        for i, data in enumerate(test_dataloader):
+            features, _ = data
+            features = features.squeeze()
+            outputs = net(features)
+            smiles_prediction.extend(outputs.squeeze().tolist())
+            del features
+    return smiles_prediction
+
+
+
+def create_test_metrics(fold_predictions,smiles_target,number_of_folds,test_size):
+    all_preds = np.zeros((test_size,number_of_folds))
+    for i in range(number_of_folds):
+        all_preds[:,i] = fold_predictions[i]
+    mean_of_predictions = all_preds.mean(axis=1)
+    mse, mae, rsquared = calculate_metrics(mean_of_predictions, smiles_target)
+    metrics_dict_test = {"test_mse": [], "test_mae": [], "test_rsquared": []}
+    test_predictions_and_target = {"predictions": [], "target": []}
+    test_predictions_and_target["predictions"] = mean_of_predictions
+    test_predictions_and_target["target"] = smiles_target
+    metrics_dict_test["test_mse"].append(mse)
+    metrics_dict_test["test_mae"].append(mae)
+    metrics_dict_test["test_rsquared"] = rsquared
+    return metrics_dict_test,test_predictions_and_target
+
+
 def calculate_metrics(predictions, target):
     mse = mean_squared_error(target, predictions)
     mae = mean_absolute_error(target, predictions)
@@ -17,8 +44,6 @@ def calculate_metrics(predictions, target):
 
 
 def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE):
-    DATA = DATA.dropna()
-    del DATA["Unnamed: 0"]
     train = DATA.sample(TRAINING_SIZE)
     test = pd.concat([train, DATA]).drop_duplicates(keep=False)
     test = test.sample(TESTING_SIZE)
