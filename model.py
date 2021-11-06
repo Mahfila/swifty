@@ -3,23 +3,33 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class Net(nn.Module):
-
-    def __init__(self,feature_dim):
-        super(Net, self).__init__()
-
-        self.fc1 = nn.Linear(feature_dim, 512)
+class AttentionNetwork(nn.Module):
+    def __init__(self, embedding_size, n_hiddenunits=512):
+        super().__init__()
+        self.hidden_dim = n_hiddenunits
+        self.emb_dim = embedding_size
+        self.encoder = nn.LSTM(embedding_size, n_hiddenunits, num_layers=1, bidirectional=True)
+        self.fc1 = nn.Linear(n_hiddenunits, 512)
         self.fc2 = nn.Linear(512, 128)
-        self.fc3 = nn.Linear(128, 64)
-        self.fc4 = nn.Linear(64, 32)
-        self.fc5 = nn.Linear(32, 1)
+        self.fc3 = nn.Linear(128, 32)
+        self.fc4 = nn.Linear(32, 1)
+
+    @staticmethod
+    def attention_layer(encoder_out, final_hidden):
+        hidden = final_hidden.squeeze(0)
+        attention_wights = torch.bmm(encoder_out, hidden.unsqueeze(2)).squeeze(2)
+        alphas = F.softmax(attention_wights, 1)
+        new_hidden = torch.bmm(encoder_out.transpose(1, 2), alphas.unsqueeze(2)).squeeze(2)
+        return alphas, new_hidden
 
     def forward(self, x):
-
-        x = F.relu(self.fc1(x))
-        x = F.relu((self.fc2(x)))
-        x = F.relu((self.fc3(x)))
-        x = F.relu((self.fc4(x)))
-        x = self.fc5(x)
-
+        output, (encoder_hidden, cell_state) = self.encoder(x)
+        bidirection_sum_initial = output[:, :, :self.hidden_dim] + output[:, :, self.hidden_dim:]
+        bidirection_sum_initial = bidirection_sum_initial.permute(1, 0, 2)
+        bidirection_sum = (encoder_hidden[-2, :, :] + encoder_hidden[-1, :, :]).unsqueeze(0)
+        alphas, attn_out = self.attention_layer(bidirection_sum_initial, bidirection_sum)
+        x = F.relu(self.fc1(attn_out))
+        x = F.relu(self.fc2(x))
+        x = F.relu(self.fc3(x))
+        x = self.fc4(x)
         return x
