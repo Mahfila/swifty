@@ -6,15 +6,14 @@ from utils import get_training_and_test_data, save_dict
 from trainer import trainer
 import argparse
 import warnings
-warnings.filterwarnings("ignore")
 
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser(description="train code for training a network to estimate depth ", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
 parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
 parser.add_argument("--training_size", type=int, help="number of epochs", nargs='+')
 args = parser.parse_args()
-
 
 targets = args.targets
 info = {'mac': [167, 'mac_keys_fingerprints(smile)'],
@@ -43,7 +42,7 @@ os.makedirs(project_info_dir, exist_ok=True)
 for target in targets:
     for key, value in info2.items():
         for size in train_size:
-            identifier = f"{target}_{key}_{str(size)}"
+            identifier = f"swift_dock{target}_{key}_{str(size)}"
             print('identifier ', identifier)
             numb_of_features = value[0]
             descriptor = value[1]
