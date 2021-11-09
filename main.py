@@ -1,34 +1,33 @@
-import os
-import time
 import pandas as pd
-from testing import test_models
-from utils import get_training_and_test_data, save_dict
-from trainer import trainer
 import argparse
 import warnings
+import os
+from other_models import OtherModels
+from swfit_dock import SwiftDock
 
 warnings.filterwarnings("ignore")
 
-parser = argparse.ArgumentParser(description="train code for training a network to estimate depth ", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+parser = argparse.ArgumentParser(description="train code for training a network to estimate depth", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
 parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
-parser.add_argument("--training_size", type=int, help="number of epochs", nargs='+')
+parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs='+')
 args = parser.parse_args()
 
-targets = args.targets
-info = {'mac': [167, 'mac_keys_fingerprints(smile)'],
-        'onehot': [3500, 'one_hot_encode(smile)'],
-        'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
-        'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
+descriptors_dictionary = {'mac': [167, 'mac_keys_fingerprints(smile)'],
+                          'onehot': [3500, 'one_hot_encode(smile)'],
+                          'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
+                          'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
 
-info2 = {}
+descriptors_dictionary_command_line = {}
 for desc in args.descriptors:
-    if desc in info:
-        info2[desc] = [info[desc][0], info[desc][1]]
+    if desc in descriptors_dictionary:
+        descriptors_dictionary_command_line[desc] = [descriptors_dictionary[desc][0], descriptors_dictionary[desc][1]]
 
-print('info2', info2)
-
-train_size = args.training_size
+training_sizes = args.training_sizes
+targets = args.targets
+print('training_sizes', training_sizes)
+print('targets', targets)
+print('descriptors_dictionary_command_line', descriptors_dictionary_command_line)
 training_metrics_dir = 'Results/training_metrics/'
 testing_metrics_dir = 'Results/testing_metrics/'
 test_predictions_dir = 'Results/test_predictions/'
@@ -39,37 +38,65 @@ os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
 os.makedirs(project_info_dir, exist_ok=True)
 
-for target in targets:
-    for key, value in info2.items():
-        for size in train_size:
-            identifier = f"swift_dock{target}_{key}_{str(size)}"
-            print('identifier ', identifier)
-            numb_of_features = value[0]
-            descriptor = value[1]
-            PATH_TO_CSV = f"{dataset_dir}/{target}.csv"
-            DATA = pd.read_csv(PATH_TO_CSV)
-            data_set_size = len(DATA)
-            TRAINING_SIZE = size
-            number_of_folds = 5
-            TESTING_SIZE = 30
-            TRAINING_SIZE = TRAINING_SIZE * number_of_folds
-            feature_dim = numb_of_features
-            train, test = get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE)
-            print("training size ", TRAINING_SIZE)
-            print("testing size ", TESTING_SIZE)
-            start_time_train_val = time.time()
-            fold_metrics, all_networks = trainer(train=train, number_of_folds=number_of_folds, feature_dim=feature_dim, descriptor=descriptor, identifier=identifier)
-            training_validation_time = (time.time() - start_time_train_val) / 60
-            identifier_train_val_metrics = f"{training_metrics_dir}{identifier}_train_metrics.csv"
-            save_dict(fold_metrics, identifier_train_val_metrics)
-            start_time_test = time.time()
-            metrics_dict_test, predictions_and_target_df = test_models(test=test, number_of_folds=number_of_folds, all_networks=all_networks, descriptor=descriptor, TESTING_SIZE=TESTING_SIZE)
-            test_time = (time.time() - start_time_test) / 60
-            identifier_test_metrics = f"{testing_metrics_dir}{identifier}_test_metrics.csv"
-            save_dict(metrics_dict_test, identifier_test_metrics)
-            identifier_test_pred_target_df = f"{test_predictions_dir}{identifier}_test_predictions.csv"
-            predictions_and_target_df.to_csv(identifier_test_pred_target_df, index=False)
-            project_info_dict = {"training_size": [TRAINING_SIZE], "testing_size": [TESTING_SIZE],
-                                 str(number_of_folds) + " fold_validation_time": [training_validation_time], "testing_time": [test_time]}
-            identifier_project_info = f"{project_info_dir}{identifier}_project_info.csv"
-            save_dict(project_info_dict, identifier_project_info)
+
+def train_models(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+                 target_path, train_size, test_size, identifier, number_of_folds, descriptor, feature_dim):
+    model = SwiftDock(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, target_path=target_path, train_size=train_size, test_size=test_size,
+                      identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
+                      feature_dim=feature_dim)
+    model.cross_validate()
+    model.test()
+    model.save_results()
+
+
+def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+             all_data, train_size, test_size, identifier, number_of_folds, regressor):
+    model = OtherModels(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, all_data=all_data, train_size=train_size, test_size=test_size,
+                        identifier=identifier, number_of_folds=number_of_folds, regressor=regressor)
+    model.cross_validate()
+    model.test()
+    model.save_results()
+
+
+if __name__ == '__main__':
+    for target in targets:
+        for key, value in descriptors_dictionary_command_line.items():
+            for size in training_sizes:
+                identifier = f"swift_dock_{target}_{key}_{str(size)}"
+                print('identifier ', identifier)
+                numb_of_features = value[0]
+                descriptor = value[1]
+                path_to_csv_file = f"{dataset_dir}/{target}.csv"
+                training_size = size
+                number_of_folds = 2
+                testing_size = 30
+                training_size = training_size * number_of_folds
+                feature_dim = numb_of_features
+                train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
+                             test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
+                             target_path=path_to_csv_file, train_size=training_size, test_size=testing_size,
+                             identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
+                             feature_dim=numb_of_features)
+
+    # for target, target_length in targets_list.items():
+    #     for regressor_id, regressor in regressors_dict.items():
+    #         for data_file, data_dim in dimensions.items():
+    #             for size in train_sizes:
+    #                 data_set_path = f"{dataset_dir}/{target}{data_file}.dat"
+    #                 identifier = f"{regressor_id}{target}_{data_file}_{str(size)}"
+    #                 print('data_set_path ', data_set_path)
+    #                 all_data = np.memmap(data_set_path, dtype=np.float32, shape=(target_length, data_dim))
+    #                 number_of_folds = 2
+    #                 TRAINING_SIZE = size * number_of_folds
+    #                 if TRAINING_SIZE > 99999:
+    #                     TESTING_SIZE = len(X) - TRAINING_SIZE
+    #                 else:
+    #                     if target == 'Target 2':
+    #                         TESTING_SIZE = 1400000
+    #                     else:
+    #                         TESTING_SIZE = 3000000
+    #
+    #                 train_ml(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
+    #                          test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
+    #                          all_data=all_data, train_size=TRAINING_SIZE, test_size=TESTING_SIZE, identifier=identifier,
+    #                          number_of_folds=number_of_folds, regressor=regressor)
