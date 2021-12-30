@@ -38,9 +38,7 @@ class SwiftDock:
         self.test_time = None
 
     def cross_validate(self):
-        data_all = pd.read_csv(self.target_path)
-        data_all = data_all.dropna()
-        self.train_data, self.test_data = get_training_and_test_data(data_all, self.train_size, self.test_size)
+        self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
@@ -90,6 +88,7 @@ class SwiftDock:
         self.all_networks = all_networks
 
     def test(self):
+        logger.info('Starting testing...')
         all_models_predictions = []
         smiles_data_test = DataGenerator(self.test_data, descriptor=self.descriptor)
         test_dataloader = DataLoader(smiles_data_test, batch_size=128, shuffle=False, num_workers=28)
@@ -117,3 +116,4 @@ class SwiftDock:
                              str(self.number_of_folds) + " fold_validation_time": [self.cross_validation_time], "testing_time": [self.test_time]}
         identifier_project_info = f"{self.project_info_dir}{self.identifier}_project_info.csv"
         save_dict(project_info_dict, identifier_project_info)
+        logger.info('Training information has been saved.')

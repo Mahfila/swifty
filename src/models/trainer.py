@@ -1,3 +1,7 @@
+from src.utils.swift_dock_logger import swift_dock_logger
+
+logger = swift_dock_logger()
+
 def train_model(train_dataloader, model, criterion, optimizer, number_of_epochs):
     metrics_dict = {"training_mse": []}
     mse_array_train = []
@@ -16,11 +20,11 @@ def train_model(train_dataloader, model, criterion, optimizer, number_of_epochs)
             del features, outputs
             running_loss += loss.item()
         mse_array_train.append(running_loss / len(train_dataloader))
-        print("Epoch: {}/{}.. ".format(epoch + 1, number_of_epochs),
+        logger.info("Epoch: {}/{}.. ".format(epoch + 1, number_of_epochs),
               "Training MSE: {:.3f}.. ".format(running_loss / len(train_dataloader)))
 
     metrics_dict["training_mse"] = mse_array_train
-    print("Finished training.")
+    logger.info("Finished training.")
     return model, metrics_dict
 
 

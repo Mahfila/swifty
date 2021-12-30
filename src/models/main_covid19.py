@@ -1,17 +1,8 @@
 import pandas as pd
 import argparse
 import os
-from other_models import OtherModels
 from src.models.swift_dock import SwiftDock
 from src.utils.swift_dock_logger import swift_dock_logger
-
-import os
-
-# Get the current working directory
-cwd = os.getcwd()
-
-# Print the current working directory
-print("Current working directory: {0}".format(cwd))
 
 logger = swift_dock_logger()
 
@@ -72,9 +63,8 @@ if __name__ == '__main__':
     for target in all_targets:
         target_data = data[['SMILES', target]]
         target_data.columns = ['smile', 'docking_score']
-        target = target.replace('_', '')
-        target_data_path = f'{dataset_dir}/{target}.csv'
-        target_data.to_csv(target_data_path, index=False)
+        target_data = target_data.dropna()
+        target = target.replace('_', '').replace('-', '')
         for key, value in descriptors_dictionary_command_line.items():
             for size in training_sizes_swift_dock:
                 identifier = f"swift_dock_{target}_{key}_{str(size)}"
@@ -88,9 +78,9 @@ if __name__ == '__main__':
                     item_testing_size = 7000000
 
                 item_testing_size = 20
-                item_training_size = 40
+                item_training_size = 20
                 train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
-                             target_path=target_data_path, train_size=item_training_size, test_size=item_testing_size,
+                             target_path=target_data, train_size=item_training_size, test_size=item_testing_size,
                              identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
                              feature_dim=num_of_features)
