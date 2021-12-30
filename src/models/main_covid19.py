@@ -59,7 +59,6 @@ if __name__ == '__main__':
     all_targets = list(data.columns)
     all_targets.remove('TITLE')
     all_targets.remove('SMILES')
-
     for target in all_targets:
         target_data = data[['SMILES', target]]
         target_data.columns = ['smile', 'docking_score']
