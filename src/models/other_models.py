@@ -1,6 +1,6 @@
 import time
 from sklearn.model_selection import KFold
-from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
+from src.utils.utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 
 
 class OtherModels:

@@ -1,6 +1,6 @@
 import torch
 from torch.utils.data import Dataset
-from smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint,mac_keys_fingerprints,one_hot_encode,morgan_fingerprints_mac_and_one_hot
+from src.utils.smiles_featurizers import  morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 
 class DataGenerator(Dataset):

@@ -2,14 +2,17 @@ import time
 
 import torch
 import torch.nn as nn
-from data_generator import DataGenerator
-from model import AttentionNetwork
+from src.utils.data_generator import DataGenerator
+from src.models.model import AttentionNetwork
 from trainer import train_model
-from utils import get_training_and_test_data, test_model, calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
+from src.utils.utils import get_training_and_test_data, test_model, calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 from torch.utils.data import DataLoader
 import numpy as np
 import pandas as pd
 import copy
+from src.utils.swift_dock_logger import swift_dock_logger
+
+logger = swift_dock_logger()
 
 
 class SwiftDock:
@@ -36,11 +39,12 @@ class SwiftDock:
 
     def cross_validate(self):
         data_all = pd.read_csv(self.target_path)
+        data_all = data_all.dropna()
         self.train_data, self.test_data = get_training_and_test_data(data_all, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
-        fold_mse, fold_mae, fold_rquared = 0, 0, 0
+        fold_mse, fold_mae, fold_rsquared = 0, 0, 0
         number_of_epochs = 1
         start_time_train_val = time.time()
         for fold in range(self.number_of_folds):
@@ -50,10 +54,10 @@ class SwiftDock:
             temp_data.pop(fold)
             temp_data = pd.concat(temp_data)
             smiles_data_train = DataGenerator(df_split[fold], descriptor=self.descriptor)  # train
-            print('len of training ', len(smiles_data_train))
+            logger.info(f'len of training {len(smiles_data_train)}')
             train_dataloader = DataLoader(smiles_data_train, batch_size=128, shuffle=True, num_workers=6)
             fold_test_dataloader_class = DataGenerator(temp_data, descriptor=self.descriptor)
-            print('len of testing ', len(fold_test_dataloader_class))
+            logger.info(f'len of testing {len(fold_test_dataloader_class)}')
             fold_test_dataloader = DataLoader(fold_test_dataloader_class, batch_size=128, shuffle=False, num_workers=6)
             criterion = nn.MSELoss()
             # training
@@ -68,12 +72,12 @@ class SwiftDock:
             mse, mae, rsquared = calculate_metrics(fold_predictions, test_smiles_target)
             fold_mse = fold_mse + mse
             fold_mae = fold_mae + mae
-            fold_rquared = fold_rquared + rsquared
+            fold_rsquared = fold_rsquared + rsquared
         self.cross_validation_time = (time.time() - start_time_train_val) / 60
 
         cross_validation_metrics = {"average_fold_mse": fold_mse / self.number_of_folds,
                                     "average_fold_mae": fold_mae / self.number_of_folds,
-                                    "average_fold_rquared": fold_rquared / self.number_of_folds}
+                                    "average_fold_rquared": fold_rsquared / self.number_of_folds}
 
         final_dict = {}
         for i in range(self.number_of_folds):
@@ -91,7 +95,7 @@ class SwiftDock:
         test_dataloader = DataLoader(smiles_data_test, batch_size=128, shuffle=False, num_workers=28)
         start_time_test = time.time()
         for fold in range(self.number_of_folds):
-            print("making fold ", fold, " predictions")
+            logger.info(f"making fold {fold} predictions")
             test_predictions = test_model(test_dataloader, self.all_networks[fold])
             all_models_predictions.append(test_predictions)
         self.test_time = (time.time() - start_time_test) / 60
@@ -113,5 +117,3 @@ class SwiftDock:
                              str(self.number_of_folds) + " fold_validation_time": [self.cross_validation_time], "testing_time": [self.test_time]}
         identifier_project_info = f"{self.project_info_dir}{self.identifier}_project_info.csv"
         save_dict(project_info_dict, identifier_project_info)
-
-
