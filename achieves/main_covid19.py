@@ -1,7 +1,8 @@
+from os.path import exists
+
 import pandas as pd
 import argparse
 import os
-from other_models import OtherModels
 from src.models.swift_dock import SwiftDock
 from src.utils.swift_dock_logger import swift_dock_logger
 
@@ -13,7 +14,7 @@ parser.add_argument("--descriptors", type=str, help="specify the training descri
 parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs='+')
 args = parser.parse_args()
 
-#####Swift Dock Arguments
+#####Swift Dock Arugments
 
 descriptors_dictionary = {'mac': [167, 'mac_keys_fingerprints(smile)'],
                           'onehot': [3500, 'one_hot_encode(smile)'],
@@ -31,20 +32,13 @@ for desc in args.descriptors:
         descriptors_dictionary_command_line[desc] = [descriptors_dictionary[desc][0], descriptors_dictionary[desc][1]]
 print('descriptors_dictionary_command_line', descriptors_dictionary_command_line)
 
-##### Other Models  Arguments
-regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
-targets_list_ml_models = {'target1': 3437838}
-dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 + 1, 'morgan_onehot_mac': 4691 + 1,
-                        'mac': 167 + 1}
-training_sizes_ml = [7000, 10000, 20000, 50000, 100000, 350000]
+number_of_folds = 4
 
-number_of_folds = 3
-
-training_metrics_dir = '../../results/training_metrics/'
-testing_metrics_dir = '../../results/testing_metrics/'
-test_predictions_dir = '../../results/test_predictions/'
-project_info_dir = '../../results/project_info/'
-dataset_dir = "../../datasets"
+training_metrics_dir = '../results/training_metrics/'
+testing_metrics_dir = '../results/testing_metrics/'
+test_predictions_dir = '../results/test_predictions/'
+project_info_dir = '../results/project_info/'
+dataset_dir = "../datasets"
 os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
@@ -61,33 +55,65 @@ def train_models(training_metrics_dir, testing_metrics_dir, test_predictions_dir
     model.save_results()
 
 
-def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
-             all_data, train_size, test_size, identifier, number_of_folds, regressor):
-    model = OtherModels(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, all_data=all_data, train_size=train_size, test_size=test_size,
-                        identifier=identifier, number_of_folds=number_of_folds, regressor=regressor)
-    model.cross_validate()
-    model.test()
-    model.save_results()
-
-
 if __name__ == '__main__':
-    for target in targets_swift_dock:
+    path_to_csv_file = f"{dataset_dir}/{targets_swift_dock[0]}.csv"
+    data = pd.read_csv(path_to_csv_file)
+    all_targets = list(data.columns)
+    all_targets.remove('TITLE')
+    all_targets.remove('SMILES')
+
+    for target in all_targets:
+        target_data = data[['SMILES', target]]
+        target_data.columns = ['smile', 'docking_score']
+        target_data = target_data.dropna()
+        target_data = target_data[target_data['smile'].map(len) <= 60]
+        target_data = target_data[target_data['docking_score'] < 0.2]
+        target = target.replace('_', '').replace('-', '')
         for key, value in descriptors_dictionary_command_line.items():
             for size in training_sizes_swift_dock:
                 identifier = f"swift_dock_{target}_{key}_{str(size)}"
+                already_exist_checker = f"{project_info_dir}{identifier}_project_info.csv"
+                if exists(already_exist_checker):
+                    continue
                 logger.info(f"Identifier {identifier}")
                 num_of_features = value[0]
                 descriptor = value[1]
-                path_to_csv_file = f"{dataset_dir}/{target}.csv"
-                data_all = pd.read_csv(path_to_csv_file)
-                data_all = data_all.dropna()
-                data_all = data_all[data_all['smile'].map(len) <= 60]
-                target_len = len(data_all)
                 item_training_size = size * number_of_folds
-                item_testing_size = (target_len - item_training_size)
+                if size > 500000:
+                    item_testing_size = len(target_data) - item_training_size
+                else:
+                    item_testing_size = 500000
 
                 train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
-                             target_path=data_all, train_size=item_training_size, test_size=item_testing_size,
+                             target_path=target_data, train_size=item_training_size, test_size=item_testing_size,
                              identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
                              feature_dim=num_of_features)
+
+
+    # for target in targets_swift_dock:
+    #     path_to_csv_file = f"{dataset_dir}/{targets_swift_dock[0]}.csv"
+    #     target_data = pd.read_csv(path_to_csv_file)
+    #     target_data = target_data.dropna()
+    #     for key, value in descriptors_dictionary_command_line.items():
+    #         for size in training_sizes_swift_dock:
+    #             identifier = f"swift_dock_{target}_{key}_{str(size)}"
+    #             logger.info(f"Identifier {identifier}")
+    #             num_of_features = value[0]
+    #             descriptor = value[1]
+    #             item_training_size = size * number_of_folds
+    #
+    #             if item_training_size > 99999:
+    #                 item_testing_size = len(target_data) - item_training_size
+    #             else:
+    #                 if target == 'target2':
+    #                     item_testing_size = 1400000
+    #                 else:
+    #                     item_testing_size = 3000000
+    #
+    #             train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
+    #                          test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
+    #                          target_path=target_data, train_size=item_training_size, test_size=item_testing_size,
+    #                          identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
+    #                          feature_dim=num_of_features)
+

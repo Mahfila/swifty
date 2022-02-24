@@ -8,6 +8,7 @@ from sklearn.metrics import mean_absolute_error
 
 
 def test_model(test_dataloader, net):
+    all_count = 0
     smiles_prediction = []
     with torch.no_grad():
         for i, data in enumerate(test_dataloader):

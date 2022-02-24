@@ -1,6 +1,7 @@
 import pandas as pd
 import argparse
 import os
+from other_models import OtherModels
 from src.models.swift_dock import SwiftDock
 from src.utils.swift_dock_logger import swift_dock_logger
 
@@ -30,13 +31,20 @@ for desc in args.descriptors:
         descriptors_dictionary_command_line[desc] = [descriptors_dictionary[desc][0], descriptors_dictionary[desc][1]]
 print('descriptors_dictionary_command_line', descriptors_dictionary_command_line)
 
+##### Other Models  Arugments
+regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
+targets_list_ml_models = {'target1': 3437838}
+dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 + 1, 'morgan_onehot_mac': 4691 + 1,
+                        'mac': 167 + 1}
+training_sizes_ml = [7000, 10000, 20000, 50000, 100000, 350000]
+
 number_of_folds = 5
 
-training_metrics_dir = '../../results/training_metrics/'
-testing_metrics_dir = '../../results/testing_metrics/'
-test_predictions_dir = '../../results/test_predictions/'
-project_info_dir = '../../results/project_info/'
-dataset_dir = "../../datasets"
+training_metrics_dir = '../results/training_metrics'
+testing_metrics_dir = '../results/testing_metrics'
+test_predictions_dir = '../results/test_predictions'
+project_info_dir = '../results/project_info'
+dataset_dir = "../datasets/"
 os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
@@ -53,33 +61,34 @@ def train_models(training_metrics_dir, testing_metrics_dir, test_predictions_dir
     model.save_results()
 
 
-if __name__ == '__main__':
-    path_to_csv_file = f"{dataset_dir}/covid19.csv"
-    data = pd.read_csv(path_to_csv_file)
-    all_targets = list(data.columns)
-    all_targets.remove('TITLE')
-    all_targets.remove('SMILES')
-    for target in all_targets:
-        target_data = data[['SMILES', target]]
-        target_data.columns = ['smile', 'docking_score']
-        target_data = target_data.dropna()
-        target = target.replace('_', '').replace('-', '')
-        for key, value in descriptors_dictionary_command_line.items():
-            for size in training_sizes_swift_dock:
-                identifier = f"swift_dock_{target}_{key}_{str(size)}"
-                logger.info(f"Identifier {identifier}")
-                num_of_features = value[0]
-                descriptor = value[1]
-                item_training_size = size * number_of_folds
-                if item_training_size > 200000:
-                    item_testing_size = len(data) - item_training_size
-                else:
-                    item_testing_size = 7000000
+def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+             all_data, train_size, test_size, identifier, number_of_folds, regressor):
+    model = OtherModels(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, all_data=all_data, train_size=train_size, test_size=test_size,
+                        identifier=identifier, number_of_folds=number_of_folds, regressor=regressor)
+    model.cross_validate()
+    model.test()
+    model.save_results()
 
-                item_testing_size = 20
-                item_training_size = 20
-                train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
+
+if __name__ == '__main__':
+    for target, target_length in targets_list_ml_models.items():
+        for regressor_id, regressor in regressors_dict_ml_models.items():
+            for data_file, data_dim in dimensions_ml_models.items():
+                for size in training_sizes_ml:
+                    data_set_path = f"{dataset_dir}/{target}{data_file}.dat"
+                    identifier = f"{regressor_id}{target}_{data_file}_{str(size)}"
+                    all_data = np.memmap(data_set_path, dtype=np.float32, shape=(target_length, data_dim))
+
+                    training_size_ml = size * number_of_folds
+                    if training_size_ml > 99999:
+                        testing_size_ml = len(all_data) - training_size_ml
+                    else:
+                        if target == 'target2':
+                            testing_size_ml = 1400000
+                        else:
+                            testing_size_ml = 3000000
+
+                    train_ml(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
-                             target_path=target_data, train_size=item_training_size, test_size=item_testing_size,
-                             identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
-                             feature_dim=num_of_features)
+                             all_data=all_data, train_size=training_size_ml, test_size=testing_size_ml, identifier=identifier,
+                             number_of_folds=number_of_folds, regressor=regressor)

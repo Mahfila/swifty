@@ -20,8 +20,8 @@ def train_model(train_dataloader, model, criterion, optimizer, number_of_epochs)
             del features, outputs
             running_loss += loss.item()
         mse_array_train.append(running_loss / len(train_dataloader))
-        logger.info("Epoch: {}/{}.. ".format(epoch + 1, number_of_epochs),
-              "Training MSE: {:.3f}.. ".format(running_loss / len(train_dataloader)))
+        logger.info(f"Epoch: {epoch+1}/{number_of_epochs}")
+        logger.info(f"Training mse {(running_loss / len(train_dataloader))}")
 
     metrics_dict["training_mse"] = mse_array_train
     logger.info("Finished training.")

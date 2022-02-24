@@ -38,7 +38,15 @@ class SwiftDock:
         self.test_time = None
 
     def cross_validate(self):
+
         self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
+        #
+        # if type(self.target_path) == 'str':
+        #     data_all = pd.read_csv(self.target_path)
+        #     data_all = data_all.dropna()
+        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
+        # else:
+        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
@@ -52,10 +60,10 @@ class SwiftDock:
             temp_data.pop(fold)
             temp_data = pd.concat(temp_data)
             smiles_data_train = DataGenerator(df_split[fold], descriptor=self.descriptor)  # train
-            logger.info(f'len of training {len(smiles_data_train)}')
+            logger.info(f'size of training {len(smiles_data_train)}')
             train_dataloader = DataLoader(smiles_data_train, batch_size=128, shuffle=True, num_workers=16)
             fold_test_dataloader_class = DataGenerator(temp_data, descriptor=self.descriptor)
-            logger.info(f'len of testing {len(fold_test_dataloader_class)}')
+            logger.info(f'size of testing {len(fold_test_dataloader_class)}')
             fold_test_dataloader = DataLoader(fold_test_dataloader_class, batch_size=128, shuffle=False, num_workers=16)
             criterion = nn.MSELoss()
             # training
@@ -75,7 +83,7 @@ class SwiftDock:
 
         cross_validation_metrics = {"average_fold_mse": fold_mse / self.number_of_folds,
                                     "average_fold_mae": fold_mae / self.number_of_folds,
-                                    "average_fold_rquared": fold_rsquared / self.number_of_folds}
+                                    "average_fold_rsquared": fold_rsquared / self.number_of_folds}
 
         final_dict = {}
         for i in range(self.number_of_folds):
@@ -86,6 +94,8 @@ class SwiftDock:
         cross_validation_metrics['average_epoch_mse'] = average_mse
         self.cross_validation_metrics = cross_validation_metrics
         self.all_networks = all_networks
+        identifier_train_val_metrics = f"{self.training_metrics_dir}{self.identifier}_train_metrics.csv"
+        save_dict(self.cross_validation_metrics, identifier_train_val_metrics)
 
     def test(self):
         logger.info('Starting testing...')

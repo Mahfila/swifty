@@ -1,4 +1,7 @@
 *.csv
 *.txt
 Datasets
+venv
+/logs
+.idea
 
