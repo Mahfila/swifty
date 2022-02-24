@@ -57,19 +57,19 @@ def calculate_metrics(predictions, target):
     return mse, mae, rsquared
 
 
-def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE):
-    X = DATA['smile']
-    Y = DATA['docking_score']
+def get_training_and_test_data(data, training_size, testing_size):
+    x = data['smile']
+    y = data['docking_score']
     from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=TRAINING_SIZE, test_size=TESTING_SIZE, random_state=42)
-    train = pd.concat([X_train, y_train], axis=1)
-    test = pd.concat([X_test, y_test], axis=1)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=training_size, test_size=testing_size, random_state=42)
+    train = pd.concat([x_train, y_train], axis=1)
+    test = pd.concat([x_test, y_test], axis=1)
     return train, test
 
 
 def save_dict(history, identifier):
     result_df = pd.DataFrame.from_dict(history)
-    result_df.to_csv(identifier)
+    result_df.to_csv(identifier, index=False)
 
 
 def predictions_heat_map(test_predictions_and_target, identifier_test_heat_map, identifier):

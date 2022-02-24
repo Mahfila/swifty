@@ -3,8 +3,8 @@ import time
 import torch
 import torch.nn as nn
 from src.utils.data_generator import DataGenerator
-from src.models.model import AttentionNetwork
-from trainer import train_model
+from src.utils.model import AttentionNetwork
+from src.utils.trainer import train_model
 from src.utils.utils import get_training_and_test_data, test_model, calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 from torch.utils.data import DataLoader
 import numpy as np

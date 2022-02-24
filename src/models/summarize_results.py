@@ -1,5 +1,3 @@
-from os.path import exists
-
 import pandas as pd
 import argparse
 import os
@@ -28,6 +26,7 @@ os.makedirs(summarized_results_dir, exist_ok=True)
 
 dataset_dir = "../../datasets"
 
+logger.info(f"Generating Results Has Started")
 if __name__ == '__main__':
     for target in args.targets:
         for regressor in args.regressors:
@@ -40,7 +39,10 @@ if __name__ == '__main__':
                 correlations = []
                 for size in args.training_sizes:
                     training_results = f"{training_metrics_dir}{regressor}_{target}_{key}_{str(size)}_train_metrics.csv"
-                    train_r2 = round(pd.read_csv(training_results)['train_rsquared'].tolist()[0], 2)
+                    try:
+                        train_r2 = round(pd.read_csv(training_results)['train_rsquared'].tolist()[0], 2)
+                    except:
+                        train_r2 = round(pd.read_csv(training_results)['average_fold_rsquared'].tolist()[0], 2)
                     testing_results = f"{testing_metrics_dir}{regressor}_{target}_{key}_{str(size)}_test_metrics.csv"
                     predictions = pd.read_csv(f"{test_predictions_dir}{regressor}_{target}_{key}_{str(size)}_test_predictions.csv")
                     target_data = predictions['target'].tolist()
@@ -60,5 +62,7 @@ if __name__ == '__main__':
                     train_r2_list.append(train_r2)
 
                 df = pd.DataFrame(list(zip(target_list, train_r2_list, test_mae_list, test_mse_list, test_r2_list, correlations)),
-                                  columns=['size', 'train_r2', 'test_mae', 'test_mse', 'test_r2', 'correlation'])
-                df.to_csv(f'{summarized_results_dir}{regressor}_{target}.csv')
+                                  columns=['size', 'train_r2', 'test_mae', 'test_mse', 'test_r2', 'Pearson_correlation'])
+                df.to_csv(f'{summarized_results_dir}{regressor}_{target}.csv', index=False)
+
+logger.info(f"Generating Results Has Ended")
