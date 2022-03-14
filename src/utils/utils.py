@@ -5,6 +5,21 @@ import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from sklearn.metrics import mean_absolute_error
+from rdkit import Chem, DataStructs
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
+import pandas as pd
+import itertools
+import time
+import torch
+import numpy as np
+import copy
+import warnings
+import matplotlib as mpl
+
+mpl.rcParams['figure.dpi'] = 300
+
+warnings.filterwarnings("ignore")
 
 
 def test_model(test_dataloader, net):
@@ -95,3 +110,50 @@ def get_smiles_dict(path_to_all_smiles):
     char2int = {ch: ii for ii, ch in int2char.items()}
     dict_size = len(char2int)
     return int2char, char2int, dict_size
+
+
+class TanimotoDataGenerator(Dataset):
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        data = self.data[idx]
+        smile = data[0]
+        fingerprint = data[1]
+        data_copy = copy.deepcopy(self.data)
+        del data_copy[idx]
+        all_distance = []
+        for key, value in data_copy.items():
+            dis = calculate_tanimoto_distance(fingerprint, value[1])
+            all_distance.append(dis)
+
+        result = {'avg': sum(all_distance) / len(all_distance), 'max': max(all_distance), 'min': min(all_distance)}
+        return result
+
+
+def plot_docking_scores_hist(data, directory):
+    plt.hist(data, bins=30)  # density=False would make counts
+    plt.ylabel('Number Of Smiles')
+    plt.xlabel('Docking Score')
+    plt.savefig(directory)
+    plt.show()
+
+
+def plot_tanimoto_hist(data, directory, Info_type):
+    plt.hist(data, bins=30)  # density=False would make counts
+    plt.ylabel('Frequency')
+    plt.xlabel(Info_type)
+    plt.savefig(directory)
+    plt.show()
+
+
+def save_dict_with_one_index(history, identifier):
+    result_df = pd.DataFrame(history, index=[0])
+    result_df.to_csv(identifier, index=False)
+
+
+def calculate_tanimoto_distance(smile1, smile2):
+    return DataStructs.FingerprintSimilarity(smile1, smile2)
