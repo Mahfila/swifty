@@ -77,6 +77,7 @@ def get_training_and_test_data(data, training_size, testing_size):
 
 def save_dict(history, identifier):
     result_df = pd.DataFrame.from_dict(history)
+    result_df.index.name = 'index'
     result_df.to_csv(identifier, index=False)
 
 

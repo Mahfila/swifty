@@ -37,7 +37,6 @@ def calculate_tanimoto(target_name):
             continue
 
     smiles_data_train = TanimotoDataGenerator(rdkit_info)
-    print("Finished 1")
     train_dataloader = DataLoader(smiles_data_train,
                                   batch_size=32,
                                   shuffle=False,
