@@ -4,7 +4,7 @@ import time
 import pandas as pd
 import numpy as np
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
+from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 from src.utils.swift_dock_logger import swift_dock_logger
 

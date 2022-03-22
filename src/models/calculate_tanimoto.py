@@ -7,7 +7,6 @@ import warnings
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from src.utils.utils import TanimotoDataGenerator, save_dict, save_dict_with_one_index
-from tqdm.notebook import tqdm_notebook
 from tqdm import tqdm
 
 mpl.rcParams['figure.dpi'] = 100
@@ -42,7 +41,7 @@ def calculate_tanimoto(target_name):
     train_dataloader = DataLoader(smiles_data_train,
                                   batch_size=32,
                                   shuffle=False,
-                                  num_workers=16)
+                                  num_workers=1)
 
     start_time = time.time()
     all_distances = []

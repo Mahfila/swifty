@@ -1,21 +1,15 @@
-import matplotlib.pyplot as plt
-import torch
-import numpy as np
-import pandas as pd
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_absolute_error
-from rdkit import Chem, DataStructs
-from torch.utils.data import DataLoader
-from torch.utils.data import Dataset
-import pandas as pd
-import itertools
-import time
-import torch
-import numpy as np
 import copy
 import warnings
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+from rdkit import DataStructs
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import r2_score
+from torch.utils.data import Dataset
 
 mpl.rcParams['figure.dpi'] = 300
 
@@ -23,7 +17,6 @@ warnings.filterwarnings("ignore")
 
 
 def test_model(test_dataloader, net):
-    all_count = 0
     smiles_prediction = []
     with torch.no_grad():
         for i, data in enumerate(test_dataloader):
@@ -37,14 +30,14 @@ def test_model(test_dataloader, net):
 
 
 def create_fold_predictions_and_target_df(fold_predictions, smiles_target, number_of_folds, test_size):
-    all_preds = np.zeros((test_size, number_of_folds + 1))
+    all_predictions = np.zeros((test_size, number_of_folds + 1))
     for i in range(number_of_folds):
-        all_preds[:, i] = fold_predictions[i]
+        all_predictions[:, i] = fold_predictions[i]
 
-    all_preds[:, -1] = smiles_target
+    all_predictions[:, -1] = smiles_target
     columns = ['f' + str(i) for i in range(number_of_folds)]
     columns.append('target')
-    predictions_and_target_df = pd.DataFrame(all_preds, columns=columns)
+    predictions_and_target_df = pd.DataFrame(all_predictions, columns=columns)
     return predictions_and_target_df
 
 
