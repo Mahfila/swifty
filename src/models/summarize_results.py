@@ -85,7 +85,7 @@ def get_more_a_specific_result(targets, models, training_size, descriptor, metri
         all_results.append(result_list)
     data_frame = pd.DataFrame(all_results, columns=models, index=targets)
     data_frame.index.name = 'target'
-    data_frame.to_csv(f'{immediate_results_dir}immediate_results.csv', index=targets)
+    data_frame.to_csv(f'{immediate_results_dir}{metric_type}_{training_size}_immediate_results.csv', index=targets)
     return all_results
 
 
@@ -95,5 +95,4 @@ if __name__ == '__main__':
     logger.info(f"Generating Results Has Ended")
     targets = ['ace', 'spike']
     models = ['decision_tree', 'swift_dock']
-    result = get_more_a_specific_result(targets, models, "7000", "morgan_onehot_mac_circular", "test_rsquared")
-    print(result)
+    result = get_more_a_specific_result(targets, models, "7000", "morgan_onehot_mac_circular", "test_mse")
