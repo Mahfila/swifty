@@ -1,21 +1,12 @@
 import pandas as pd
-import argparse
 import os
 import numpy as np
 from src.utils.swift_dock_logger import swift_dock_logger
 from scipy import stats
 import matplotlib.pyplot as plt
+from os.path import exists
 
 logger = swift_dock_logger()
-
-parser = argparse.ArgumentParser(description="train code for training a network to estimate depth", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
-parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
-parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs='+')
-parser.add_argument("--regressors", type=str, help="specify the training regressors", nargs='+')
-args = parser.parse_args()
-
-descriptors_dictionary = {'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
 
 graph_results_dir = '../../results/graph_results/'
 test_predictions_dir = '../../results/test_predictions/'
@@ -24,6 +15,7 @@ dataset_dir = "../../datasets"
 
 
 def scatter_plot_predictions(target_lists, model_lists, descriptor_list, training_size):
+    logger.info(f"Generating Scatter Plot Has Started")
     fig, ax = plt.subplots(len(target_lists), len(model_lists))
     fig.tight_layout(pad=0.4, h_pad=1.7)
     fig.set_size_inches(70, 30)
@@ -55,17 +47,23 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
 
         col = 0
         row = row + 1
-    fig.savefig(f"{graph_results_dir}{training_size} plot", facecolor='w')
+    fig.savefig(f"{graph_results_dir}{training_size}_training_plot", facecolor='w')
+    logger.info(f"Generating Scatter Plot Has Ended")
 
 
 def correlation_graph(target, models, labels, training_sizes):
+    logger.info(f"Correlation Plot Generation Has Started")
     descriptor = 'morgan_onehot_mac_circular'
     correlation_list = []
     for model in models:
         each_train_size_list = []
         for train_size in training_sizes:
             file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{train_size}_test_predictions.csv"
-            print("file_name", file_name)
+            file_exists = exists(file_name)
+            if file_exists is False:
+                logger.info(f"File not found -- {file_name}")
+                return print(FileNotFoundError)
+            logger.info(f"Current File {file_name}")
             data = pd.read_csv(file_name)
             target_data = data['target'].tolist()
             predictions_data = data['f1'].tolist()
@@ -74,7 +72,6 @@ def correlation_graph(target, models, labels, training_sizes):
             correlation = stats.spearmanr(target_top_5000_rounded, predictions_top_5000_rounded)
             correlation_rounded = round(correlation[0], 2)
             each_train_size_list.append(correlation_rounded)
-            print(correlation)
         correlation_list.append(each_train_size_list)
 
     x = np.arange(len(labels))  # the label locations
@@ -104,15 +101,62 @@ def correlation_graph(target, models, labels, training_sizes):
 
     fig.tight_layout()
     plt.show()
-    fig.savefig(f"{graph_results_dir}cor plot", facecolor='w')
+    fig.savefig(f"{graph_results_dir}{target}_correlation_plot", facecolor='w')
+    logger.info(f"Correlation Plot Generation Has Ended")
+
+
+def average_correlation(models, training_sizes, target):
+
+    descriptor = 'morgan_onehot_mac_circular'
+    correlation_list = []
+    for model in models:
+        each_train_size_list = []
+        for train_size in training_sizes:
+            file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{train_size}_test_predictions.csv"
+            file_exists = exists(file_name)
+            if file_exists is False:
+                logger.info(f"File not found -- {file_name}")
+                return print(FileNotFoundError)
+            logger.info(f"Current File -- {file_name}")
+            data = pd.read_csv(file_name)
+            target_data = data['target'].tolist()
+            predictions_data = data['f1'].tolist()
+            target_top_5000_rounded = [round(item, 2) for item in target_data]
+            predictions_top_5000_rounded = [round(item, 2) for item in predictions_data]
+            correlation = stats.spearmanr(target_top_5000_rounded, predictions_top_5000_rounded)
+            correlation_rounded = round(correlation[0], 2)
+            each_train_size_list.append(correlation_rounded)
+        correlation_list.append(each_train_size_list)
+
+    averages = [sum(item) / len(item) for item in correlation_list]
+    return averages
+
+
+def average_correlations(models, training_sizes, targets):
+    logger.info(f"Correlation Table Generation Has Started")
+    results = []
+    for target in targets:
+        results.append({target: average_correlation(models, training_sizes, target)})
+    list_of_rows = []
+    for item in results:
+        key = list(item.keys())[0]
+        values = item[key]
+        list_of_rows.append(values)
+    result_df = pd.DataFrame(list_of_rows, columns=models, index=targets)
+    result_df.index.name = 'target'
+    result_df.to_csv(f"{graph_results_dir}cor_table.csv")
+    logger.info(f"Correlation Table Generation Has Ended")
 
 
 if __name__ == '__main__':
-    logger.info(f"Generating Results Has Started")
+
     target = 'ace'
-    models = ['swift_dock', 'decision_tree', 'sgdreg', 'xgboost']
+    targets = ['ace', 'spike','']
+    primary_targets = ['target1', 'target2', 'target3']
+    models = ['lstm', 'decision_tree', 'sgdreg', 'xgboost']
     descriptor = 'morgan_onehot_mac_circular'
+    labels = ['7k', '50k', '350k']
+    training_sizes = [7000, 50000, 350000]
     # scatter_plot_predictions(targets, models, descriptor, 7000)
-    labels = ['7k', '10k', '20k']
-    training_sizes = [7000, 10000, 20000]
-    correlation_graph(target, models, labels, training_sizes)
+    # correlation_graph('ace', models, labels, training_sizes)
+    average_correlations(models, training_sizes, targets)
