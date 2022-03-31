@@ -218,18 +218,23 @@ def average_correlations(models, training_sizes, targets):
     logger.info(f"Correlation Table Generation Has Ended")
 
 
-def creating_training_time(training_sizes, labels_for_times, models, targets):
+def creating_training_time(training_sizes, models, targets):
     def add_labels(y):
         for i in range(len(y)):
             plt.text(i, y[i], y[i], ha='center', fontsize=10)
 
-    metric = 'morgan_onehot_mac_circular'
+    labels_for_times = []
+    for model in models:
+        for training_size in training_sizes:
+            labels_for_times.append(f"{model}{training_size // 1000}k")
+
+    descriptor = 'morgan_onehot_mac_circular'
     all_test_list = []
     all_train_list = []
     for model in models:
         for train_size in training_sizes:
             for target in targets:
-                file_name = f"{project_info_dir}{model}_{target}_{metric}_{train_size}_project_info.csv"
+                file_name = f"{project_info_dir}{model}_{target}_{descriptor}_{train_size}_project_info.csv"
                 logger.info(f"Current File -- {file_name}")
                 data = pd.read_csv(file_name)
                 train_time = data['5 fold_validation_time'].tolist()[0]
