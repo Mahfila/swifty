@@ -1,8 +1,8 @@
 import pandas as pd
 import argparse
 import os
-from other_models import OtherModels
-from src.models.swift_dock import SwiftDock
+from ml_models import OtherModels
+from src.models.lstm import SwiftDock
 from src.utils.swift_dock_logger import swift_dock_logger
 
 logger = swift_dock_logger()

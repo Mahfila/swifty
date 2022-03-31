@@ -1,7 +1,7 @@
 import numpy as np
 import argparse
 import os
-from other_models import OtherModels
+from ml_models import OtherModels
 from src.utils.swift_dock_logger import swift_dock_logger
 
 logger = swift_dock_logger()
