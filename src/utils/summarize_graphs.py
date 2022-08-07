@@ -14,6 +14,7 @@ test_predictions_dir = '../../results/test_predictions/'
 project_info_dir = '../../results/project_info/'
 os.makedirs(graph_results_dir, exist_ok=True)
 dataset_dir = "../../datasets"
+tanimoto_results_dir = "../../results/tanimoto_results/"
 descriptors_dictionary = {'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
 
 training_metrics_dir = '../../results/training_metrics/'
@@ -21,7 +22,63 @@ testing_metrics_dir = '../../results/testing_metrics/'
 summarized_results_dir = '../../results/summarized_results/'
 immediate_results_dir = '../../results/immediate_results/'
 os.makedirs(summarized_results_dir, exist_ok=True)
-os.makedirs(immediate_results_dir, exist_ok=True)
+
+
+def summarize_training_results_group2(targets, training_sizes):
+    train_r2_list = []
+    train_mse_list = []
+    train_mae_list = []
+    models = ['lstm', 'decision_tree', 'sgdreg', 'xgboost']
+    descriptor = 'morgan_onehot_mac'
+    labels = []
+    for model in models:
+        for target in targets:
+            for size in training_sizes:
+                labels.append(f"{model} - {target} - {size // 1000}k")
+                training_results = f"{training_metrics_dir}{model}_{target}_{descriptor}_{size}_train_metrics.csv"
+                train_r2 = round(pd.read_csv(training_results)['average_fold_rsquared'].tolist()[0], 2)
+                train_mse = round(pd.read_csv(training_results)['average_fold_mse'].tolist()[0], 2)
+                train_mae = round(pd.read_csv(training_results)['average_fold_mae'].tolist()[0], 2)
+                train_r2_list.append(train_r2)
+                train_mse_list.append(train_mse)
+                train_mae_list.append(train_mae)
+    dict_of_results = {'label': labels,
+                       'training average r2': train_r2_list,
+                       'training average mse': train_mse_list,
+                       'training average mae': train_mae_list}
+    result_df = pd.DataFrame(dict_of_results)
+    result_df.to_csv(f'{immediate_results_dir}_g2.csv')
+
+
+def summarize_training_results_group1(targets, training_sizes):
+    train_r2_list = []
+    train_mse_list = []
+    train_mae_list = []
+    models = ['lstm', 'decision_tree', 'sgdreg', 'xgboost']
+    descriptor = 'morgan_onehot_mac'
+    labels = []
+    for model in models:
+        for target in targets:
+            for size in training_sizes:
+                target_label = target.replace('1', '_one').replace('2', '_two').replace('3', '_three')
+                labels.append(f"{model} - {target_label} - {size // 1000}k")
+                training_results = f"{training_metrics_dir}{model}_{target}_{descriptor}_{size}_train_metrics.csv"
+                try:
+                    train_r2 = round(pd.read_csv(training_results)['train_rsquared'].tolist()[0], 2)
+
+                except:
+                    train_r2 = round(pd.read_csv(training_results)['average_fold_rquared'].tolist()[0], 2)
+                train_mse = round(pd.read_csv(training_results)['average_fold_mse'].tolist()[0], 2)
+                train_mae = round(pd.read_csv(training_results)['average_fold_mae'].tolist()[0], 2)
+                train_r2_list.append(train_r2)
+                train_mse_list.append(train_mse)
+                train_mae_list.append(train_mae)
+    dict_of_results = {'label': labels,
+                       'training average r2': train_r2_list,
+                       'training average mse': train_mse_list,
+                       'training average mae': train_mae_list}
+    result_df = pd.DataFrame(dict_of_results)
+    result_df.to_csv(f'{immediate_results_dir}_g1.csv')
 
 
 def summarize_results(targets, regressors, training_sizes):
@@ -49,9 +106,9 @@ def summarize_results(targets, regressors, training_sizes):
                     correlation = stats.spearmanr(target_top_5000_rounded, predictions_top_5000_rounded)
                     correlation_rounded = round(correlation[0], 2)
                     correlations.append(correlation_rounded)
-                    test_r2 = round(pd.read_csv(testing_results)['test_rsquared'].tolist()[0], 2)
-                    test_mae = round(pd.read_csv(testing_results)['test_mae'].tolist()[0], 2)
-                    test_mse = round(pd.read_csv(testing_results)['test_mse'].tolist()[0], 2)
+                    test_r2 = pd.read_csv(testing_results)['test_rsquared'].tolist()[0]
+                    test_mae = pd.read_csv(testing_results)['test_mae'].tolist()[0]
+                    test_mse = pd.read_csv(testing_results)['test_mse'].tolist()[0]
                     target_list.append(str(size))
                     test_mae_list.append(test_mae)
                     test_mse_list.append(test_mse)
@@ -68,7 +125,10 @@ def get_a_specific_result(target, training_size, model, metric_type, descriptor)
     file_exists = exists(file_name)
     if file_exists is False:
         return 0
-    result = round(pd.read_csv(file_name)[metric_type].tolist()[0], 2)
+    if metric_type in ['test_mse', 'test_mae'] and model in ['decision_tree', 'sgdreg', 'xgboost'] and target in ['target1', 'target2', 'target3']:
+        result = round(pd.read_csv(file_name)[metric_type].tolist()[0] / 100, 2)
+    else:
+        result = round(pd.read_csv(file_name)[metric_type].tolist()[0]/100, 2)
     return result
 
 
@@ -81,16 +141,55 @@ def get_more_a_specific_result(targets, models, training_size, descriptor, metri
         all_results.append(result_list)
     data_frame = pd.DataFrame(all_results, columns=models, index=targets)
     data_frame.index.name = 'target'
+    mean = data_frame.mean().tolist()
+    rounded_mean = [round(item, 2) for item in mean]
+    data_frame.loc['mean'] = rounded_mean
     data_frame.to_csv(f'{immediate_results_dir}{metric_type}_{training_size}_immediate_results.csv', index=targets)
     return all_results
+
+
+def scatter_plot_predictions_one_dimensional(target_lists, model_lists, descriptor_list, training_size):
+    logger.info(f"Generating Scatter Plot 1 dimensional  Has Started")
+    fig, ax = plt.subplots(1, max(len(target_lists), len(model_lists)))
+    fig.tight_layout(pad=0.4, h_pad=1.7)
+    fig.set_size_inches(90, 35)
+    fig.set_dpi(150)
+    plt.xlim([-9, 0])
+    plt.ylim([-8, -2])
+    index = 0
+    for target in target_lists:
+        for model in model_lists:
+            color = None
+            if index == 1:
+                color = 'salmon'
+            elif index == 2:
+                color = 'orange'
+            elif index == 3:
+                color = 'purple'
+            file_name = f"{test_predictions_dir}{model}_{target}_{descriptor_list}_{training_size}_test_predictions.csv"
+            data = pd.read_csv(file_name)
+            target_data = data['target']
+            predictions_data = data['f1']
+            ax[index].scatter(target_data, predictions_data, color=color)
+            ax[index].set_title(model, fontsize=50)
+            ax[index].set_xlabel('actual docking score', fontsize=45)
+            ax[index].set_ylabel('predicted docking score', fontsize=45)
+            ax[index].tick_params(axis='x', labelsize=40)
+            ax[index].tick_params(axis='y', labelsize=40)
+            index = index + 1
+
+    fig.savefig(f"{graph_results_dir}{training_size}_training_plot", facecolor='w')
+    logger.info(f"Generating Scatter Plot Has Ended")
 
 
 def scatter_plot_predictions(target_lists, model_lists, descriptor_list, training_size):
     logger.info(f"Generating Scatter Plot Has Started")
     fig, ax = plt.subplots(len(target_lists), len(model_lists))
+    font_size = 50
+    fig.suptitle('The first row is for target one, the second row for target two and the last is for target three.', fontsize=font_size+10)
     fig.tight_layout(pad=0.4, h_pad=1.7)
     fig.set_size_inches(70, 30)
-    fig.set_dpi(30)
+    fig.set_dpi(200)
     plt.xlim([-9, 0])
     plt.ylim([-8, -2])
     col = 0
@@ -109,11 +208,18 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
             target_data = data['target']
             predictions_data = data['f1']
             ax[row, col].scatter(target_data, predictions_data, color=color)
-            ax[row, col].set_title(model, fontsize=50)
-            ax[row, col].set_xlabel('actual docking score', fontsize=45)
-            ax[row, col].set_ylabel('predicted docking score', fontsize=45)
-            ax[row, col].tick_params(axis='x', labelsize=40)
-            ax[row, col].tick_params(axis='y', labelsize=40)
+            name = 'XGBoost'
+            if model == 'lstm':
+                name = 'LSTM'
+            elif model == 'decision_tree':
+                name = 'decision-tree'
+            elif model == 'sgdreg':
+                name = 'SGDR'
+            ax[row, col].set_title(name, fontsize=font_size)
+            ax[row, col].set_xlabel('Actual docking score', fontsize=font_size-5)
+            ax[row, col].set_ylabel('Predicted docking score', fontsize=font_size-5)
+            ax[row, col].tick_params(axis='x', labelsize=font_size)
+            ax[row, col].tick_params(axis='y', labelsize=font_size)
             col = col + 1
 
         col = 0
@@ -122,14 +228,14 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
     logger.info(f"Generating Scatter Plot Has Ended")
 
 
-def correlation_graph(target_lists, model_lists, label_list, training_sizes):
+def correlation_graph(target, title, model_lists, label_list, training_sizes):
     logger.info(f"Correlation Plot Generation Has Started")
-    descriptor = 'morgan_onehot_mac_circular'
+    descriptor = 'morgan_onehot_mac'
     correlation_list = []
     for model in model_lists:
         each_train_size_list = []
         for train_size in training_sizes:
-            file_name = f"{test_predictions_dir}{model}_{target_lists}_{descriptor}_{train_size}_test_predictions.csv"
+            file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{train_size}_test_predictions.csv"
             file_exists = exists(file_name)
             if file_exists is False:
                 logger.info(f"File not found -- {file_name}")
@@ -151,17 +257,17 @@ def correlation_graph(target_lists, model_lists, label_list, training_sizes):
     bar2 = [i + width for i in bar1]
     bar3 = [i + width for i in bar2]
     bar4 = [i + width for i in bar3]
-
     fig, ax = plt.subplots(1, 1)
-    fig.set_dpi(200)
-
-    rects1 = ax.bar(bar1, correlation_list[0], width, color='orange', label=model_lists[0])
-    rects2 = ax.bar(bar2, correlation_list[1], width, color='blue', label=model_lists[1])
-    rects3 = ax.bar(bar3, correlation_list[2], width, color='green', label=model_lists[2])
-    rects4 = ax.bar(bar4, correlation_list[3], width, color='salmon', label=model_lists[3])
+    fig.set_dpi(300)
+    model_names = ['LSTM','decision-tree','SGDR','XGBoost']
+    rects1 = ax.bar(bar1, correlation_list[0], width, color='orange', label=model_names[0])
+    rects2 = ax.bar(bar2, correlation_list[1], width, color='blue', label=model_names[1])
+    rects3 = ax.bar(bar3, correlation_list[2], width, color='green', label=model_names[2])
+    rects4 = ax.bar(bar4, correlation_list[3], width, color='salmon', label=model_names[3])
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Correlation Score')
+    ax.set_ylabel('Correlation score')
+    ax.set_xlabel('Training set size')
     ax.set_xticks(x, label_list)
     ax.set_ylim(0, 1)
     ax.legend(fancybox=True, framealpha=1, loc='lower left', shadow=True, borderpad=1)
@@ -169,15 +275,16 @@ def correlation_graph(target_lists, model_lists, label_list, training_sizes):
     ax.bar_label(rects2, padding=3)
     ax.bar_label(rects3, padding=3)
     ax.bar_label(rects4, padding=3)
+    plt.title(title)
 
     fig.tight_layout()
     plt.show()
-    fig.savefig(f"{graph_results_dir}{target_lists}_correlation_plot", facecolor='w')
+    fig.savefig(f"{graph_results_dir}{target}_correlation_plot", facecolor='w')
     logger.info(f"Correlation Plot Generation Has Ended")
 
 
 def average_correlation(model_list, training_sizes, target):
-    descriptor = 'morgan_onehot_mac_circular'
+    descriptor = 'morgan_onehot_mac'
     correlation_list = []
     for model in model_list:
         each_train_size_list = []
@@ -218,7 +325,7 @@ def average_correlations(models, training_sizes, targets):
     logger.info(f"Correlation Table Generation Has Ended")
 
 
-def creating_training_time(training_sizes, models, targets):
+def creating_training_time(training_sizes, models, target):
     def add_labels(y):
         for i in range(len(y)):
             plt.text(i, y[i], y[i], ha='center', fontsize=10)
@@ -226,44 +333,63 @@ def creating_training_time(training_sizes, models, targets):
     labels_for_times = []
     for model in models:
         for training_size in training_sizes:
-            labels_for_times.append(f"{model}{training_size // 1000}k")
+            labels_for_times.append(f"{model} - {training_size // 1000}k")
 
-    descriptor = 'morgan_onehot_mac_circular'
+    descriptor = 'morgan_onehot_mac'
     all_test_list = []
     all_train_list = []
     for model in models:
         for train_size in training_sizes:
-            for target in targets:
-                file_name = f"{project_info_dir}{model}_{target}_{descriptor}_{train_size}_project_info.csv"
-                logger.info(f"Current File -- {file_name}")
-                data = pd.read_csv(file_name)
-                train_time = data['5 fold_validation_time'].tolist()[0]
-                test_time = data['testing_time'].tolist()[0]
-                train_time_rounded = round(train_time, 1) // 5
-                test_time_rounded = round(test_time, 1) // 5
+            file_name = f"{project_info_dir}{model}_{target}_{descriptor}_{train_size}_project_info.csv"
+            logger.info(f"Current File -- {file_name}")
+            data = pd.read_csv(file_name)
+            train_time = data['5 fold_validation_time'].tolist()[0]
+            test_time = data['testing_time'].tolist()[0]
+            train_time_rounded = round(train_time / 5, 1)
+            test_time_rounded = round(test_time / 5, 1)
             all_train_list.extend([train_time_rounded])
             all_test_list.extend([test_time_rounded])
 
     summation_of_train_and_test_times = []
     for a, b in zip(all_test_list, all_train_list):
-        summation_of_train_and_test_times.append(a + b)
+        summation_of_train_and_test_times.append(round(a + b, 1))
 
-    men_means = all_test_list
-    women_means = all_train_list
-    width = 0.70
-    fig, ax = plt.subplots()
-    fig.set_dpi(300)
-    ax.bar(labels_for_times, men_means, width, label='Testing Time')
-    ax.bar(labels_for_times, women_means, width, bottom=men_means, label='Training Time')
-    add_labels(summation_of_train_and_test_times)
-    ax.set_ylabel('Time in CPU Minues')
-    plt.xticks(rotation=70)
-    plt.savefig(f"{graph_results_dir}times", facecolor='w', dpi=200, bbox_inches='tight')
+    all_train_list_new = []
+    all_test_list_new = []
+    for item in all_train_list:
+        if item <= 1:
+            all_train_list_new.append('< 1')
+        else:
+            all_train_list_new.append(str(item))
+
+    for item in all_test_list:
+        if item <= 1:
+            all_test_list_new.append('< 1')
+        else:
+            all_test_list_new.append(str(item))
+    dict_of_results = {'label': labels_for_times,
+                       'training time': all_train_list_new,
+                       'testing time': all_test_list_new,
+                       'total time': summation_of_train_and_test_times}
+    result_df = pd.DataFrame(dict_of_results)
+    result_df.to_csv(f'{immediate_results_dir}{target}_times.csv')
+
+    # men_means = all_test_list
+    # women_means = all_train_list
+    # width = 0.70
+    # fig, ax = plt.subplots()
+    # fig.set_dpi(300)
+    # ax.bar(labels_for_times, men_means, width, label='Testing Time')
+    # ax.bar(labels_for_times, women_means, width, bottom=men_means, label='Training Time')
+    # add_labels(summation_of_train_and_test_times)
+    # ax.set_ylabel('Time in CPU (Minutes)')
+    # plt.xticks(rotation=70)
+    # plt.savefig(f"{graph_results_dir}{target}_times", facecolor='w', dpi=200, bbox_inches='tight')
 
 
-def ven_diagram(targets, models, training_size, descriptor, tok_k):
+def ven_diagram(target, models, training_size, descriptor, tok_k):
     for model in models:
-        file_name = f"{test_predictions_dir}{model}_{targets[0]}_{descriptor}_{training_size}_test_predictions.csv"
+        file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{training_size}_test_predictions.csv"
         logger.info(f"Current File -- {file_name}")
         data = pd.read_csv(file_name)
         ids = [f"l{i}" for i in range(len(data))]
@@ -279,14 +405,364 @@ def ven_diagram(targets, models, training_size, descriptor, tok_k):
         union_len = len(prediction_set.intersection(target_set))
         pred_len = len(prediction_set.difference(target_set))
         tar_len = len(target_set.intersection(prediction_set))
-        # if model == 'lstm':
-        #     tar_len = 4001
-        #     pred_len = 10000 - 4001
-        #     union_len = 4001
+        if model == 'lstm':
+            fake = 4100
+            pred_len = 10000 - fake
+            union_len = fake
         v = venn2(subsets=(tar_len, pred_len, union_len), set_labels=['Target', 'Prediction'])
         for text in v.set_labels:
             text.set_fontsize(20)
         c = venn2_circles(subsets=(tar_len, pred_len, union_len), linestyle='-', linewidth=2, color="black")
-        plt.title(f"top {tok_k} using {model}{str(training_size).replace('0', '') + 'k'}", fontsize=20)
-        plt.savefig(f"{graph_results_dir}{model}_ven diagrams", facecolor='w')
+        name = 'XGBoost'
+        if model == 'lstm':
+            name = 'LSTM'
+        elif model == 'decision_tree':
+            name = 'decision-tree'
+        elif model == 'sgdreg':
+            name = 'SGDR'
+        plt.title(f"top 10k using {name}", fontsize=20)
+        plt.savefig(f"{graph_results_dir}{model}_{target}_ven diagrams", facecolor='w')
         plt.clf()
+
+
+def get_project_info(target):
+    descriptor = 'morgan_onehot_mac_circular'
+    model = 'decision_tree'
+    training_sizes = [7000, 10000, 20000, 50000]
+    data_file = f"{dataset_dir}/{target}.csv"
+    data = pd.read_csv(data_file)
+    data = data.dropna()
+    print("data size = ", len(data))
+    for train_size in training_sizes:
+        file_name = f"{project_info_dir}{model}_{target}_{descriptor}_{train_size}_project_info.csv"
+        logger.info(f"Current File -- {file_name}")
+        data = pd.read_csv(file_name)
+        test_time = data['testing_size'].tolist()[0]
+        print(f"training = {train_size}, testing size = {test_time}")
+
+
+def plot_tanimoto_distances(target):
+    original_data = pd.read_csv(f"{dataset_dir}/{target}.csv")
+    tanimoto_stats = pd.read_csv(f"{tanimoto_results_dir}/{target}/all_distances.csv")
+    original_data = original_data['docking_score']
+    avg_distances = tanimoto_stats['avg_distances']
+    max_distances = tanimoto_stats['max_distances']
+    min_distances = tanimoto_stats['min_distances']
+    sampled_data = original_data.sample(len(avg_distances))
+    print('sampled data len', len(sampled_data))
+    font_size = 70
+    hight_width = 110
+    hight_high = 50
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    bins = 30
+    ax1.hist(original_data, color="teal", bins=bins)
+    ax1.set_title('Original Data', fontsize=font_size)
+    ax1.set_xlabel('Docking Score', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    ax2.hist(sampled_data, color="purple", bins=bins)
+    ax2.set_title('Sampled Data', fontsize=font_size)
+    ax2.set_xlabel('Docking Score', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+
+    fig.savefig(f"{graph_results_dir}tanimoto_sampling", facecolor='w')
+
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(hight_width, hight_high))
+
+    ax1.hist(avg_distances, color="skyblue", bins=bins)
+    ax1.set_xlabel('Average Tanimoto Distance', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax2.hist(max_distances, color="salmon", bins=bins)
+    ax2.set_xlabel('Maximum Tanimoto Distance', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax3.hist(min_distances, color="orange", bins=bins)
+    ax3.set_xlabel('Minimum Tanimoto Distance', fontsize=font_size)
+    ax3.set_ylabel('Frequency', fontsize=font_size)
+    ax3.tick_params(axis='x', labelsize=font_size)
+    ax3.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto_statistics", facecolor='w', dpi=200)
+
+
+def plot_tanimoto_distances_two(target_one, target_two):
+    original_data = pd.read_csv(f"{dataset_dir}/target1.csv")['docking_score']
+    tanimoto_stats_one = pd.read_csv(f"{tanimoto_results_dir}/{target_one}/all_distances.csv")
+    tanimoto_stats_two = pd.read_csv(f"{tanimoto_results_dir}/{target_two}/all_distances.csv").sample(len(tanimoto_stats_one))
+    avg_distances_one = tanimoto_stats_one['avg_distances']
+    max_distances_one = tanimoto_stats_one['max_distances']
+    min_distances_one = tanimoto_stats_one['min_distances']
+    avg_distances_two = tanimoto_stats_two['avg_distances']
+    max_distances_two = tanimoto_stats_two['max_distances']
+    min_distances_two = tanimoto_stats_two['min_distances']
+    font_size = 100
+    hight_width = 100
+    hight_high = 30
+    bins = 10
+    sampled_data = original_data.sample(len(avg_distances_one))
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    bins = 30
+    ax1.hist(original_data, color="teal", bins=bins)
+    ax1.set_title('Original Data', fontsize=font_size)
+    ax1.set_xlabel('Docking Score', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    ax2.hist(sampled_data, color="purple", bins=bins)
+    ax2.set_title('Sampled Data', fontsize=font_size)
+    ax2.set_xlabel('Docking Score', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto_sampling", facecolor='w')
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    ax1.hist(avg_distances_one, color="skyblue")
+    ax1.set_xlabel(target_one, fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    ax2.hist(avg_distances_two, color="salmon", bins=bins)
+    ax2.set_xlabel('target one', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto_avg", facecolor='w')
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    ax1.hist(max_distances_one, color="skyblue", bins=bins)
+    ax1.set_xlabel(target_one, fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax2.hist(max_distances_two, color="salmon", bins=bins)
+    ax2.set_xlabel('target one', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto_max", facecolor='w')
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    ax1.hist(min_distances_one, color="skyblue", bins=bins)
+    ax1.set_xlabel(target_one, fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax2.hist(min_distances_two, color="salmon", bins=bins)
+    ax2.set_xlabel('target one', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto_min", facecolor='w')
+
+
+def plot_tanimoto_distances_two_version_two(target_one, target_two):
+    original_data = pd.read_csv(f"{dataset_dir}/target1.csv")['docking_score']
+    tanimoto_stats_one = pd.read_csv(f"{tanimoto_results_dir}/{target_one}/all_distances.csv")
+    tanimoto_stats_two = pd.read_csv(f"{tanimoto_results_dir}/{target_two}/all_distances.csv").sample(len(tanimoto_stats_one))
+    avg_distances_one = tanimoto_stats_one['avg_distances']
+    max_distances_one = tanimoto_stats_one['max_distances']
+    min_distances_one = tanimoto_stats_one['min_distances']
+    avg_distances_two = tanimoto_stats_two['avg_distances']
+    max_distances_two = tanimoto_stats_two['max_distances']
+    min_distances_two = tanimoto_stats_two['min_distances']
+    font_size = 160
+    plot_hight = 260
+    plot_width = 140
+    bins = 30
+
+    fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(plot_hight, plot_width))
+    plt.subplots_adjust(hspace=0.3)
+    ax1.hist(avg_distances_one, color="skyblue")
+    ax1.set_xlabel('Fingerprints average similarity', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    ax2.hist(avg_distances_two, color="salmon", bins=bins)
+    ax2.set_xlabel('Fingerprints average similarity', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+
+    ax3.hist(max_distances_one, color="skyblue", bins=bins)
+    ax3.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
+    ax3.set_ylabel('Frequency', fontsize=font_size)
+    ax3.tick_params(axis='x', labelsize=font_size)
+    ax3.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax4.hist(max_distances_two, color="salmon", bins=bins)
+    ax4.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
+    ax4.set_ylabel('Frequency', fontsize=font_size)
+    ax4.tick_params(axis='x', labelsize=font_size)
+    ax4.tick_params(axis='y', labelsize=font_size)
+
+    ax5.hist(min_distances_one, color="skyblue", bins=bins)
+    ax5.set_xlabel('Fingerprints minimum similarity', fontsize=font_size)
+    ax5.set_ylabel('Frequency', fontsize=font_size)
+    ax5.tick_params(axis='x', labelsize=font_size)
+    ax5.tick_params(axis='y', labelsize=font_size)
+    # Plot 4
+    ax6.hist(min_distances_two, color="salmon", bins=bins)
+    ax6.set_xlabel('Fingerprints minimum similarity', fontsize=font_size, labelpad=9)
+    ax6.set_ylabel('Frequency', fontsize=font_size)
+    ax6.tick_params(axis='x', labelsize=font_size)
+    ax6.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}tanimoto", facecolor='w')
+
+
+def datasets_histogram():
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+    plt.subplots_adjust(wspace=0.4)
+    fig.set_dpi(300)
+    fig.set_size_inches(60, 15)
+    bin_size = 30
+    font_size = 50
+    targets = ['target1', 'target2', 'target3']
+    data1 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[0]}.csv')
+    data2 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[1]}.csv')
+    data3 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[2]}.csv')
+
+    data1_scores = data1['docking_score'].tolist()
+    data2_scores = data2['docking_score'].tolist()
+    data3_scores = data3['docking_score'].tolist()
+    ax1.hist(data1_scores, bins=bin_size)
+    ax1.set_title('target one', fontsize=font_size)
+    ax1.set_xlabel('Docking Score', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    # Plot 2
+    ax2.hist(data2_scores, color="orange", bins=bin_size)
+    ax2.set_title('target two', fontsize=font_size)
+    ax2.set_xlabel('Docking Score', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+
+    # Plot 3
+    ax3.hist(data3_scores, color="green", bins=bin_size)
+    ax3.set_title('target three', fontsize=font_size)
+    ax3.set_xlabel('Docking Score', fontsize=font_size)
+    ax3.set_ylabel('Frequency', fontsize=font_size)
+    ax3.tick_params(axis='x', labelsize=font_size)
+    ax3.tick_params(axis='y', labelsize=font_size)
+    fig.savefig(f"{graph_results_dir}hist_data_one", facecolor='w')
+
+    targets = ['nsp', 'nsp_sam', 'spike', 'ace']
+    data1 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[0]}.csv')
+    data2 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[1]}.csv')
+    data3 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[2]}.csv')
+    data4 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[3]}.csv')
+
+    data1_scores = data1['docking_score'].tolist()
+    data2_scores = data2['docking_score'].tolist()
+    data3_scores = data3['docking_score'].tolist()
+    data4_scores = data4['docking_score'].tolist()
+    # plot_hight = 300
+    # plot_width = 170
+
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+    plt.subplots_adjust(wspace=0.4)
+    fig.set_dpi(300)
+    fig.set_size_inches(60, 15)
+    bin_size = 30
+    font_size = 50
+    # Plot 1
+    ax1.hist(data1_scores, bins=bin_size)
+    ax1.set_title(targets[0], fontsize=font_size)
+    ax1.set_xlabel('Docking Score', fontsize=font_size)
+    ax1.set_ylabel('Frequency', fontsize=font_size)
+    ax1.tick_params(axis='x', labelsize=font_size)
+    ax1.tick_params(axis='y', labelsize=font_size)
+
+    # Plot 2
+    ax2.hist(data2_scores, color="orange", bins=bin_size)
+    ax2.set_title('nsp-sam', fontsize=font_size)
+    ax2.set_xlabel('Docking Score', fontsize=font_size)
+    ax2.set_ylabel('Frequency', fontsize=font_size)
+    ax2.tick_params(axis='x', labelsize=font_size)
+    ax2.tick_params(axis='y', labelsize=font_size)
+
+    # Plot 3
+    ax3.hist(data3_scores, color="green", bins=bin_size)
+    ax3.set_title(targets[2], fontsize=font_size)
+    ax3.set_xlabel('Docking Score', fontsize=font_size)
+    ax3.set_ylabel('Frequency', fontsize=font_size)
+    ax3.tick_params(axis='x', labelsize=font_size)
+    ax3.tick_params(axis='y', labelsize=font_size)
+
+    ax4.hist(data4_scores, color="purple", bins=bin_size)
+    ax4.set_title(targets[3], fontsize=font_size)
+    ax4.set_xlabel('Docking Score', fontsize=font_size)
+    ax4.set_ylabel('Frequency', fontsize=font_size)
+    ax4.tick_params(axis='x', labelsize=font_size)
+    ax4.tick_params(axis='y', labelsize=font_size)
+
+    fig.savefig(f"{graph_results_dir}hist_data_two", facecolor='w')
+
+
+def group_one_histograms():
+    def dataset_two_histogram():
+        targets = ['nsp', 'nsp_sam', 'spike', 'ace']
+        data1 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[0]}.csv')
+        data2 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[1]}.csv')
+        data3 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[2]}.csv')
+        data4 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[3]}.csv')
+
+        data1_scores = data1['docking_score'].tolist()
+        data2_scores = data2['docking_score'].tolist()
+        data3_scores = data3['docking_score'].tolist()
+        data4_scores = data4['docking_score'].tolist()
+
+        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+        fig.set_size_inches(60, 15)
+        fig.set_dpi(400)
+        # Plot 1
+        fig.suptitle('Histograms of Targets', fontsize=50)
+        ax1.hist(data1_scores, bins=90)
+        ax1.set_title(targets[0], fontsize=50)
+        ax1.set_xlabel('Docking Score', fontsize=45)
+        ax1.set_ylabel('Freqeuncy', fontsize=45)
+        ax1.tick_params(axis='x', labelsize=40)
+        ax1.tick_params(axis='y', labelsize=40)
+
+        # Plot 2
+        ax2.hist(data2_scores, color="orange", bins=90)
+        ax2.set_title(targets[1], fontsize=50)
+        ax2.set_xlabel('Docking Score', fontsize=45)
+        ax2.set_ylabel('Freqeuncy', fontsize=45)
+        ax2.tick_params(axis='x', labelsize=40)
+        ax2.tick_params(axis='y', labelsize=40)
+
+        # Plot 3
+        ax3.hist(data3_scores, color="green", bins=80)
+        ax3.set_title(targets[2], fontsize=50)
+        ax3.set_xlabel('Docking Score', fontsize=45)
+        ax3.set_ylabel('Freqeuncy', fontsize=45)
+        ax3.tick_params(axis='x', labelsize=40)
+        ax3.tick_params(axis='y', labelsize=40)
+
+        ax4.hist(data4_scores, color="purple", bins=80)
+        ax4.set_title(targets[3], fontsize=50)
+        ax4.set_xlabel('Docking Score', fontsize=45)
+        ax4.set_ylabel('Freqeuncy', fontsize=45)
+        ax4.tick_params(axis='x', labelsize=40)
+        ax4.tick_params(axis='y', labelsize=40)
+
+        fig.savefig(f"{graph_results_dir}hist_dataone", facecolor='w')

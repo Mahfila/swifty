@@ -24,20 +24,19 @@ targets_swift_dock = args.targets
 logger.info(f"training_sizes {training_sizes_swift_dock}")
 logger.info(f"targets {targets_swift_dock}", )
 
-
-
 ##### Other Models  Arugments
 regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
 targets_list_ml_models = {'target1': 3437838}
 dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 + 1, 'morgan_onehot_mac': 4691 + 1,
                         'mac': 167 + 1}
 
-dimensions_ml_models = { 'morgan_onehot_mac_circular': 4755 + 1}
-#training_sizes_ml = [7000, 10000, 20000, 50000, 100000, 350000]
-training_sizes_ml = args.training_sizes
-targets = args.targets
+dimensions_ml_models = {'morgan_onehot_mac': 4691 + 1}
 
-number_of_folds = 3
+training_sizes_ml = args.training_sizes
+training_sizes_ml = [7000]
+targets = ["ace", "spike", "nsp_sam", "nsp"]
+
+number_of_folds = 5
 
 training_metrics_dir = '../../results/training_metrics/'
 testing_metrics_dir = '../../results/testing_metrics/'

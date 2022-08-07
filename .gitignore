@@ -1,5 +1,6 @@
 *.csv
 *.txt
+*.png
 Datasets
 venv
 /logs
