@@ -505,12 +505,12 @@ def plot_tanimoto_distances_two(target_one, target_two):
     max_distances_two = tanimoto_stats_two['max_distances']
     min_distances_two = tanimoto_stats_two['min_distances']
     font_size = 100
-    hight_width = 100
-    hight_high = 30
+    hight = 100
+    width = 30
     bins = 10
     sampled_data = original_data.sample(len(avg_distances_one))
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
     bins = 30
     ax1.hist(original_data, color="teal", bins=bins)
     ax1.set_title('Original Data', fontsize=font_size)
@@ -527,7 +527,7 @@ def plot_tanimoto_distances_two(target_one, target_two):
     ax2.tick_params(axis='y', labelsize=font_size)
     fig.savefig(f"{graph_results_dir}tanimoto_sampling", facecolor='w')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
     ax1.hist(avg_distances_one, color="skyblue")
     ax1.set_xlabel(target_one, fontsize=font_size)
     ax1.set_ylabel('Frequency', fontsize=font_size)
@@ -541,7 +541,7 @@ def plot_tanimoto_distances_two(target_one, target_two):
     ax2.tick_params(axis='y', labelsize=font_size)
     fig.savefig(f"{graph_results_dir}tanimoto_avg", facecolor='w')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
     ax1.hist(max_distances_one, color="skyblue", bins=bins)
     ax1.set_xlabel(target_one, fontsize=font_size)
     ax1.set_ylabel('Frequency', fontsize=font_size)
@@ -555,7 +555,7 @@ def plot_tanimoto_distances_two(target_one, target_two):
     ax2.tick_params(axis='y', labelsize=font_size)
     fig.savefig(f"{graph_results_dir}tanimoto_max", facecolor='w')
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
     ax1.hist(min_distances_one, color="skyblue", bins=bins)
     ax1.set_xlabel(target_one, fontsize=font_size)
     ax1.set_ylabel('Frequency', fontsize=font_size)

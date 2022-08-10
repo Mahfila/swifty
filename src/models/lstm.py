@@ -40,13 +40,6 @@ class SwiftDock:
     def cross_validate(self):
 
         self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
-        #
-        # if type(self.target_path) == 'str':
-        #     data_all = pd.read_csv(self.target_path)
-        #     data_all = data_all.dropna()
-        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
-        # else:
-        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
