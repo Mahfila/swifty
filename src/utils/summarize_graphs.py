@@ -128,7 +128,7 @@ def get_a_specific_result(target, training_size, model, metric_type, descriptor)
     if metric_type in ['test_mse', 'test_mae'] and model in ['decision_tree', 'sgdreg', 'xgboost'] and target in ['target1', 'target2', 'target3']:
         result = round(pd.read_csv(file_name)[metric_type].tolist()[0] / 100, 2)
     else:
-        result = round(pd.read_csv(file_name)[metric_type].tolist()[0]/100, 2)
+        result = round(pd.read_csv(file_name)[metric_type].tolist()[0] / 100, 2)
     return result
 
 
@@ -186,7 +186,7 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
     logger.info(f"Generating Scatter Plot Has Started")
     fig, ax = plt.subplots(len(target_lists), len(model_lists))
     font_size = 50
-    fig.suptitle('The first row is for target one, the second row for target two and the last is for target three.', fontsize=font_size+10)
+    fig.suptitle('The first row is for target one, the second row for target two and the last is for target three.', fontsize=font_size + 10)
     fig.tight_layout(pad=0.4, h_pad=1.7)
     fig.set_size_inches(70, 30)
     fig.set_dpi(200)
@@ -216,8 +216,8 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
             elif model == 'sgdreg':
                 name = 'SGDR'
             ax[row, col].set_title(name, fontsize=font_size)
-            ax[row, col].set_xlabel('Actual docking score', fontsize=font_size-5)
-            ax[row, col].set_ylabel('Predicted docking score', fontsize=font_size-5)
+            ax[row, col].set_xlabel('Actual docking score', fontsize=font_size - 5)
+            ax[row, col].set_ylabel('Predicted docking score', fontsize=font_size - 5)
             ax[row, col].tick_params(axis='x', labelsize=font_size)
             ax[row, col].tick_params(axis='y', labelsize=font_size)
             col = col + 1
@@ -259,7 +259,7 @@ def correlation_graph(target, title, model_lists, label_list, training_sizes):
     bar4 = [i + width for i in bar3]
     fig, ax = plt.subplots(1, 1)
     fig.set_dpi(300)
-    model_names = ['LSTM','decision-tree','SGDR','XGBoost']
+    model_names = ['LSTM', 'decision-tree', 'SGDR', 'XGBoost']
     rects1 = ax.bar(bar1, correlation_list[0], width, color='orange', label=model_names[0])
     rects2 = ax.bar(bar2, correlation_list[1], width, color='blue', label=model_names[1])
     rects3 = ax.bar(bar3, correlation_list[2], width, color='green', label=model_names[2])
@@ -441,135 +441,6 @@ def get_project_info(target):
         print(f"training = {train_size}, testing size = {test_time}")
 
 
-def plot_tanimoto_distances(target):
-    original_data = pd.read_csv(f"{dataset_dir}/{target}.csv")
-    tanimoto_stats = pd.read_csv(f"{tanimoto_results_dir}/{target}/all_distances.csv")
-    original_data = original_data['docking_score']
-    avg_distances = tanimoto_stats['avg_distances']
-    max_distances = tanimoto_stats['max_distances']
-    min_distances = tanimoto_stats['min_distances']
-    sampled_data = original_data.sample(len(avg_distances))
-    print('sampled data len', len(sampled_data))
-    font_size = 70
-    hight_width = 110
-    hight_high = 50
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight_width, hight_high))
-    bins = 30
-    ax1.hist(original_data, color="teal", bins=bins)
-    ax1.set_title('Original Data', fontsize=font_size)
-    ax1.set_xlabel('Docking Score', fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-
-    ax2.hist(sampled_data, color="purple", bins=bins)
-    ax2.set_title('Sampled Data', fontsize=font_size)
-    ax2.set_xlabel('Docking Score', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-
-    fig.savefig(f"{graph_results_dir}tanimoto_sampling", facecolor='w')
-
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(hight_width, hight_high))
-
-    ax1.hist(avg_distances, color="skyblue", bins=bins)
-    ax1.set_xlabel('Average Tanimoto Distance', fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax2.hist(max_distances, color="salmon", bins=bins)
-    ax2.set_xlabel('Maximum Tanimoto Distance', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax3.hist(min_distances, color="orange", bins=bins)
-    ax3.set_xlabel('Minimum Tanimoto Distance', fontsize=font_size)
-    ax3.set_ylabel('Frequency', fontsize=font_size)
-    ax3.tick_params(axis='x', labelsize=font_size)
-    ax3.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto_statistics", facecolor='w', dpi=200)
-
-
-def plot_tanimoto_distances_two(target_one, target_two):
-    original_data = pd.read_csv(f"{dataset_dir}/target1.csv")['docking_score']
-    tanimoto_stats_one = pd.read_csv(f"{tanimoto_results_dir}/{target_one}/all_distances.csv")
-    tanimoto_stats_two = pd.read_csv(f"{tanimoto_results_dir}/{target_two}/all_distances.csv").sample(len(tanimoto_stats_one))
-    avg_distances_one = tanimoto_stats_one['avg_distances']
-    max_distances_one = tanimoto_stats_one['max_distances']
-    min_distances_one = tanimoto_stats_one['min_distances']
-    avg_distances_two = tanimoto_stats_two['avg_distances']
-    max_distances_two = tanimoto_stats_two['max_distances']
-    min_distances_two = tanimoto_stats_two['min_distances']
-    font_size = 100
-    hight = 100
-    width = 30
-    bins = 10
-    sampled_data = original_data.sample(len(avg_distances_one))
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
-    bins = 30
-    ax1.hist(original_data, color="teal", bins=bins)
-    ax1.set_title('Original Data', fontsize=font_size)
-    ax1.set_xlabel('Docking Score', fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-
-    ax2.hist(sampled_data, color="purple", bins=bins)
-    ax2.set_title('Sampled Data', fontsize=font_size)
-    ax2.set_xlabel('Docking Score', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto_sampling", facecolor='w')
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
-    ax1.hist(avg_distances_one, color="skyblue")
-    ax1.set_xlabel(target_one, fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-
-    ax2.hist(avg_distances_two, color="salmon", bins=bins)
-    ax2.set_xlabel('target one', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto_avg", facecolor='w')
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
-    ax1.hist(max_distances_one, color="skyblue", bins=bins)
-    ax1.set_xlabel(target_one, fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax2.hist(max_distances_two, color="salmon", bins=bins)
-    ax2.set_xlabel('target one', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto_max", facecolor='w')
-
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(hight, width))
-    ax1.hist(min_distances_one, color="skyblue", bins=bins)
-    ax1.set_xlabel(target_one, fontsize=font_size)
-    ax1.set_ylabel('Frequency', fontsize=font_size)
-    ax1.tick_params(axis='x', labelsize=font_size)
-    ax1.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax2.hist(min_distances_two, color="salmon", bins=bins)
-    ax2.set_xlabel('target one', fontsize=font_size)
-    ax2.set_ylabel('Frequency', fontsize=font_size)
-    ax2.tick_params(axis='x', labelsize=font_size)
-    ax2.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto_min", facecolor='w')
-
-
 def plot_tanimoto_distances_two_version_two(target_one, target_two):
     original_data = pd.read_csv(f"{dataset_dir}/target1.csv")['docking_score']
     tanimoto_stats_one = pd.read_csv(f"{tanimoto_results_dir}/{target_one}/all_distances.csv")
@@ -581,47 +452,36 @@ def plot_tanimoto_distances_two_version_two(target_one, target_two):
     max_distances_two = tanimoto_stats_two['max_distances']
     min_distances_two = tanimoto_stats_two['min_distances']
     font_size = 160
-    plot_hight = 260
+    plot_hight = 200
     plot_width = 140
-    bins = 30
+    bins = 20
 
-    fig, ((ax1, ax2), (ax3, ax4), (ax5, ax6)) = plt.subplots(3, 2, figsize=(plot_hight, plot_width))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(plot_hight, plot_width))
     plt.subplots_adjust(hspace=0.3)
-    ax1.hist(avg_distances_one, color="skyblue")
+    ax1.hist(avg_distances_one, alpha=0.5, color="skyblue", label="spike")
+    ax1.hist(avg_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax1.legend(loc="upper left", prop={'size': font_size})
     ax1.set_xlabel('Fingerprints average similarity', fontsize=font_size)
     ax1.set_ylabel('Frequency', fontsize=font_size)
     ax1.tick_params(axis='x', labelsize=font_size)
     ax1.tick_params(axis='y', labelsize=font_size)
 
-    ax2.hist(avg_distances_two, color="salmon", bins=bins)
-    ax2.set_xlabel('Fingerprints average similarity', fontsize=font_size)
+    ax2.hist(max_distances_one, alpha=0.5, color="skyblue", bins=bins, label="spike")
+    ax2.hist(max_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax2.legend(loc='upper left', prop={'size': font_size})
+    ax2.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
     ax2.set_ylabel('Frequency', fontsize=font_size)
     ax2.tick_params(axis='x', labelsize=font_size)
     ax2.tick_params(axis='y', labelsize=font_size)
 
-    ax3.hist(max_distances_one, color="skyblue", bins=bins)
-    ax3.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
+    ax3.hist(min_distances_one, alpha=0.5, color="skyblue", bins=bins, label="spike")
+    ax3.hist(min_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax3.legend(loc='upper right', prop={'size': font_size})
+    ax3.set_xlabel('Fingerprints minimum similarity', fontsize=font_size)
     ax3.set_ylabel('Frequency', fontsize=font_size)
+
     ax3.tick_params(axis='x', labelsize=font_size)
     ax3.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax4.hist(max_distances_two, color="salmon", bins=bins)
-    ax4.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
-    ax4.set_ylabel('Frequency', fontsize=font_size)
-    ax4.tick_params(axis='x', labelsize=font_size)
-    ax4.tick_params(axis='y', labelsize=font_size)
-
-    ax5.hist(min_distances_one, color="skyblue", bins=bins)
-    ax5.set_xlabel('Fingerprints minimum similarity', fontsize=font_size)
-    ax5.set_ylabel('Frequency', fontsize=font_size)
-    ax5.tick_params(axis='x', labelsize=font_size)
-    ax5.tick_params(axis='y', labelsize=font_size)
-    # Plot 4
-    ax6.hist(min_distances_two, color="salmon", bins=bins)
-    ax6.set_xlabel('Fingerprints minimum similarity', fontsize=font_size, labelpad=9)
-    ax6.set_ylabel('Frequency', fontsize=font_size)
-    ax6.tick_params(axis='x', labelsize=font_size)
-    ax6.tick_params(axis='y', labelsize=font_size)
     fig.savefig(f"{graph_results_dir}tanimoto", facecolor='w')
 
 
@@ -715,54 +575,3 @@ def datasets_histogram():
     ax4.tick_params(axis='y', labelsize=font_size)
 
     fig.savefig(f"{graph_results_dir}hist_data_two", facecolor='w')
-
-
-def group_one_histograms():
-    def dataset_two_histogram():
-        targets = ['nsp', 'nsp_sam', 'spike', 'ace']
-        data1 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[0]}.csv')
-        data2 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[1]}.csv')
-        data3 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[2]}.csv')
-        data4 = pd.read_csv(f'/Users/abdulsalamyazid/PycharmProjects/swift_dock/datasets/{targets[3]}.csv')
-
-        data1_scores = data1['docking_score'].tolist()
-        data2_scores = data2['docking_score'].tolist()
-        data3_scores = data3['docking_score'].tolist()
-        data4_scores = data4['docking_score'].tolist()
-
-        fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
-        fig.set_size_inches(60, 15)
-        fig.set_dpi(400)
-        # Plot 1
-        fig.suptitle('Histograms of Targets', fontsize=50)
-        ax1.hist(data1_scores, bins=90)
-        ax1.set_title(targets[0], fontsize=50)
-        ax1.set_xlabel('Docking Score', fontsize=45)
-        ax1.set_ylabel('Freqeuncy', fontsize=45)
-        ax1.tick_params(axis='x', labelsize=40)
-        ax1.tick_params(axis='y', labelsize=40)
-
-        # Plot 2
-        ax2.hist(data2_scores, color="orange", bins=90)
-        ax2.set_title(targets[1], fontsize=50)
-        ax2.set_xlabel('Docking Score', fontsize=45)
-        ax2.set_ylabel('Freqeuncy', fontsize=45)
-        ax2.tick_params(axis='x', labelsize=40)
-        ax2.tick_params(axis='y', labelsize=40)
-
-        # Plot 3
-        ax3.hist(data3_scores, color="green", bins=80)
-        ax3.set_title(targets[2], fontsize=50)
-        ax3.set_xlabel('Docking Score', fontsize=45)
-        ax3.set_ylabel('Freqeuncy', fontsize=45)
-        ax3.tick_params(axis='x', labelsize=40)
-        ax3.tick_params(axis='y', labelsize=40)
-
-        ax4.hist(data4_scores, color="purple", bins=80)
-        ax4.set_title(targets[3], fontsize=50)
-        ax4.set_xlabel('Docking Score', fontsize=45)
-        ax4.set_ylabel('Freqeuncy', fontsize=45)
-        ax4.tick_params(axis='x', labelsize=40)
-        ax4.tick_params(axis='y', labelsize=40)
-
-        fig.savefig(f"{graph_results_dir}hist_dataone", facecolor='w')

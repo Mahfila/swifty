@@ -21,7 +21,7 @@ training_sizes_other = [7000, 10000, 50000]
 # tok_k = 10000
 list_of_labels = []
 #ven_diagram('target3', models, 7000, descriptor, 10000)
-scatter_plot_predictions(primary_targets, models, descriptor, 350000)
+#scatter_plot_predictions(primary_targets, models, descriptor, 350000)
 # scatter_plot_predictions_one_dimensional(primary_targets, models1, descriptor, 7000)
 title1 = "target three"
 #correlation_graph('target3', title1, models, labels, training_sizes_other)
@@ -36,4 +36,4 @@ title1 = "target three"
 # creating_training_time(training_sizes, models, 'target3')
 #summarize_training_results_group2(targets, training_sizes_other)
 # summarize_training_results_group1(primary_targets, training_sizes)
-#plot_tanimoto_distances_two_version_two('spike', 'target1')
+plot_tanimoto_distances_two_version_two('spike', 'target1')
