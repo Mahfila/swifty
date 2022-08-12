@@ -441,8 +441,7 @@ def get_project_info(target):
         print(f"training = {train_size}, testing size = {test_time}")
 
 
-def plot_tanimoto_distances_two_version_two(target_one, target_two):
-    original_data = pd.read_csv(f"{dataset_dir}/target1.csv")['docking_score']
+def plot_tanimoto_distances_version_two(target_one, target_two):
     tanimoto_stats_one = pd.read_csv(f"{tanimoto_results_dir}/{target_one}/all_distances.csv")
     tanimoto_stats_two = pd.read_csv(f"{tanimoto_results_dir}/{target_two}/all_distances.csv").sample(len(tanimoto_stats_one))
     avg_distances_one = tanimoto_stats_one['avg_distances']
@@ -452,11 +451,11 @@ def plot_tanimoto_distances_two_version_two(target_one, target_two):
     max_distances_two = tanimoto_stats_two['max_distances']
     min_distances_two = tanimoto_stats_two['min_distances']
     font_size = 160
-    plot_hight = 200
+    plot_height = 200
     plot_width = 140
     bins = 20
 
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(plot_hight, plot_width))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(plot_height, plot_width))
     plt.subplots_adjust(hspace=0.3)
     ax1.hist(avg_distances_one, alpha=0.5, color="skyblue", label="spike")
     ax1.hist(avg_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
@@ -482,7 +481,7 @@ def plot_tanimoto_distances_two_version_two(target_one, target_two):
 
     ax3.tick_params(axis='x', labelsize=font_size)
     ax3.tick_params(axis='y', labelsize=font_size)
-    fig.savefig(f"{graph_results_dir}tanimoto", facecolor='w')
+    fig.savefig(f"{graph_results_dir}_tanimoto", facecolor='w')
 
 
 def datasets_histogram():
@@ -534,15 +533,10 @@ def datasets_histogram():
     data2_scores = data2['docking_score'].tolist()
     data3_scores = data3['docking_score'].tolist()
     data4_scores = data4['docking_score'].tolist()
-    # plot_hight = 300
-    # plot_width = 170
 
     fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
     plt.subplots_adjust(wspace=0.4)
-    fig.set_dpi(300)
     fig.set_size_inches(60, 15)
-    bin_size = 30
-    font_size = 50
     # Plot 1
     ax1.hist(data1_scores, bins=bin_size)
     ax1.set_title(targets[0], fontsize=font_size)

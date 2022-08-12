@@ -2,7 +2,7 @@ from src.utils.summarize_graphs import ven_diagram, \
     scatter_plot_predictions, \
     correlation_graph, \
     creating_training_time, \
-    average_correlations, summarize_results, get_more_a_specific_result, scatter_plot_predictions_one_dimensional, get_project_info, plot_tanimoto_distances, plot_tanimoto_distances_two, summarize_training_results_group2, summarize_training_results_group1, plot_tanimoto_distances_two_version_two, datasets_histogram
+    average_correlations, summarize_results, get_more_a_specific_result, scatter_plot_predictions_one_dimensional, get_project_info, summarize_training_results_group_dataset_two, summarize_training_results_group_dataset_one, plot_tanimoto_distances_version_two, datasets_histogram
 
 # target = 'ace'
 targets = ['ace', 'spike', 'nsp', 'nsp_sam']
