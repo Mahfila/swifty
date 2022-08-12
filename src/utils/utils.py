@@ -10,6 +10,7 @@ from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split
 
 mpl.rcParams['figure.dpi'] = 300
 
@@ -41,7 +42,7 @@ def create_fold_predictions_and_target_df(fold_predictions, smiles_target, numbe
     return predictions_and_target_df
 
 
-def create_test_metrics(fold_predictions, smiles_target, number_of_folds, test_size):
+def create_test_metrics(fold_predictions, smiles_target, number_of_folds):
     all_folds_mse = 0
     all_folds_mae = 0
     all_folds_rsquared = 0
@@ -68,7 +69,6 @@ def calculate_metrics(predictions, target):
 def get_training_and_test_data(data, training_size, testing_size):
     x = data['smile']
     y = data['docking_score']
-    from sklearn.model_selection import train_test_split
     x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=training_size, test_size=testing_size, random_state=42)
     train = pd.concat([x_train, y_train], axis=1)
     test = pd.concat([x_test, y_test], axis=1)
@@ -79,18 +79,6 @@ def save_dict(history, identifier):
     result_df = pd.DataFrame.from_dict(history)
     result_df.index.name = 'index'
     result_df.to_csv(identifier, index=False)
-
-
-def predictions_heat_map(test_predictions_and_target, identifier_test_heat_map, identifier):
-    predictions = test_predictions_and_target["predictions"]
-    target = test_predictions_and_target["target"]
-    fig, ax1 = plt.subplots(1, 1)
-    fig.set_dpi(500)
-    fig.suptitle("Test Heat Map " + identifier, fontsize=10)
-    ax1.set_xlabel('Target', fontsize=10)
-    ax1.set_ylabel('Predictions', fontsize=10)
-    plt.hexbin(target, predictions, gridsize=100, bins='log')
-    fig.savefig(identifier_test_heat_map)
 
 
 def get_smiles_dict(path_to_all_smiles):

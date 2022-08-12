@@ -24,7 +24,7 @@ immediate_results_dir = '../../results/immediate_results/'
 os.makedirs(summarized_results_dir, exist_ok=True)
 
 
-def summarize_training_results_group2(targets, training_sizes):
+def summarize_training_results_group_dataset_two(targets, training_sizes):
     train_r2_list = []
     train_mse_list = []
     train_mae_list = []
@@ -47,10 +47,10 @@ def summarize_training_results_group2(targets, training_sizes):
                        'training average mse': train_mse_list,
                        'training average mae': train_mae_list}
     result_df = pd.DataFrame(dict_of_results)
-    result_df.to_csv(f'{immediate_results_dir}_g2.csv')
+    result_df.to_csv(f'{immediate_results_dir}_dataset_two_training_results.csv')
 
 
-def summarize_training_results_group1(targets, training_sizes):
+def summarize_training_results_group_dataset_one(targets, training_sizes):
     train_r2_list = []
     train_mse_list = []
     train_mae_list = []
@@ -78,7 +78,7 @@ def summarize_training_results_group1(targets, training_sizes):
                        'training average mse': train_mse_list,
                        'training average mae': train_mae_list}
     result_df = pd.DataFrame(dict_of_results)
-    result_df.to_csv(f'{immediate_results_dir}_g1.csv')
+    result_df.to_csv(f'{immediate_results_dir}_dataset_one_training_results.csv')
 
 
 def summarize_results(targets, regressors, training_sizes):
@@ -101,9 +101,9 @@ def summarize_results(targets, regressors, training_sizes):
                     predictions = pd.read_csv(f"{test_predictions_dir}{regressor}_{target}_{key}_{str(size)}_test_predictions.csv")
                     target_data = predictions['target'].tolist()
                     predictions_data = predictions['f1'].tolist()
-                    target_top_5000_rounded = [round(item, 2) for item in target_data]
-                    predictions_top_5000_rounded = [round(item, 2) for item in predictions_data]
-                    correlation = stats.spearmanr(target_top_5000_rounded, predictions_top_5000_rounded)
+                    target_rounded = [round(item, 2) for item in target_data]
+                    predictions_rounded = [round(item, 2) for item in predictions_data]
+                    correlation = stats.spearmanr(target_rounded, predictions_rounded)
                     correlation_rounded = round(correlation[0], 2)
                     correlations.append(correlation_rounded)
                     test_r2 = pd.read_csv(testing_results)['test_rsquared'].tolist()[0]
@@ -117,7 +117,7 @@ def summarize_results(targets, regressors, training_sizes):
 
                 df = pd.DataFrame(list(zip(target_list, train_r2_list, test_mae_list, test_mse_list, test_r2_list, correlations)),
                                   columns=['size', 'train_r2', 'test_mae', 'test_mse', 'test_r2', 'Pearson_correlation'])
-                df.to_csv(f'{summarized_results_dir}{regressor}_{target}.csv', index=False)
+                df.to_csv(f'{summarized_results_dir}{regressor}_{target}_test_results_summarized.csv', index=False)
 
 
 def get_a_specific_result(target, training_size, model, metric_type, descriptor):
