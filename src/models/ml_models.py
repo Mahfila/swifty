@@ -77,7 +77,7 @@ class OtherModels:
         average_fold_mse = sum(train_metrics['average_fold_mse']) / len(train_metrics['average_fold_mse'])
         average_fold_mae = sum(train_metrics['average_fold_mae']) / len(train_metrics['average_fold_mae'])
         average_fold_r2 = sum(train_metrics['average_fold_rsquared']) / len(train_metrics['average_fold_rsquared'])
-        train_metrics = {'average_fold_mse': [average_fold_mse], 'average_fold_mae': [average_fold_mae], 'train_rsquared': [average_fold_r2]}
+        train_metrics = {'average_fold_mse': [average_fold_mse], 'average_fold_mae': [average_fold_mae], 'average_fold_rsquared': [average_fold_r2]}
         self.cross_validation_metrics = train_metrics
         self.all_regressors = regressors_list
 

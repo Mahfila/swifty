@@ -3,8 +3,8 @@ import time
 import torch
 import torch.nn as nn
 from src.utils.data_generator import DataGenerator
-from src.models.model import AttentionNetwork
-from trainer import train_model
+from src.utils.model import AttentionNetwork
+from src.utils.trainer import train_model
 from src.utils.utils import get_training_and_test_data, test_model, calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 from torch.utils.data import DataLoader
 import numpy as np
@@ -40,13 +40,6 @@ class SwiftDock:
     def cross_validate(self):
 
         self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
-        #
-        # if type(self.target_path) == 'str':
-        #     data_all = pd.read_csv(self.target_path)
-        #     data_all = data_all.dropna()
-        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
-        # else:
-        #     self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []

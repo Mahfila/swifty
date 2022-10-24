@@ -1,17 +1,11 @@
-import argparse
-import os
 import time
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
+from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 from src.utils.swift_dock_logger import swift_dock_logger
-
-parser = argparse.ArgumentParser(description="train code for training a network to estimate depth", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
-args = parser.parse_args()
-targets = args.targets
 
 
 logger = swift_dock_logger()
@@ -22,7 +16,7 @@ info = {
     'mac': [167, 'mac_keys_fingerprints(smile)']}
 
 info = {
-    'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
+    'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)']}
 dataset_dir = "../../datasets"
 
 
@@ -43,6 +37,7 @@ class Training(Dataset):
         return X_Y
 
 
+targets = ["nsp_sam", "spike"]
 for target in targets:
     for key, item in info.items():
         fingerprint_name = key
@@ -60,8 +55,8 @@ for target in targets:
         start_time_test = time.time()
         init = 0
         batch_size = 128
-        train_dataloader = DataLoader(smiles_data_train, batch_size=batch_size, shuffle=True, num_workers=28)
-        for i, data in enumerate(train_dataloader):
+        train_dataloader = DataLoader(smiles_data_train, batch_size=batch_size, shuffle=True, num_workers=8)
+        for i, data in enumerate(tqdm(train_dataloader)):
             numpy_data = data.numpy()
             data_set[init:init + numpy_data.shape[0], :] = numpy_data
             init = init + numpy_data.shape[0]

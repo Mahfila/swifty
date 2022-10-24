@@ -1,6 +1,6 @@
 from src.utils.swift_dock_logger import swift_dock_logger
-
 logger = swift_dock_logger()
+
 
 def train_model(train_dataloader, model, criterion, optimizer, number_of_epochs):
     metrics_dict = {"training_mse": []}

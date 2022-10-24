@@ -1,14 +1,23 @@
+import copy
+import warnings
+import matplotlib as mpl
 import matplotlib.pyplot as plt
-import torch
 import numpy as np
 import pandas as pd
+import torch
+from rdkit import DataStructs
+from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-from sklearn.metrics import mean_absolute_error
+from torch.utils.data import Dataset
+from sklearn.model_selection import train_test_split
+
+mpl.rcParams['figure.dpi'] = 300
+
+warnings.filterwarnings("ignore")
 
 
 def test_model(test_dataloader, net):
-    all_count = 0
     smiles_prediction = []
     with torch.no_grad():
         for i, data in enumerate(test_dataloader):
@@ -22,18 +31,18 @@ def test_model(test_dataloader, net):
 
 
 def create_fold_predictions_and_target_df(fold_predictions, smiles_target, number_of_folds, test_size):
-    all_preds = np.zeros((test_size, number_of_folds + 1))
+    all_predictions = np.zeros((test_size, number_of_folds + 1))
     for i in range(number_of_folds):
-        all_preds[:, i] = fold_predictions[i]
+        all_predictions[:, i] = fold_predictions[i]
 
-    all_preds[:, -1] = smiles_target
+    all_predictions[:, -1] = smiles_target
     columns = ['f' + str(i) for i in range(number_of_folds)]
     columns.append('target')
-    predictions_and_target_df = pd.DataFrame(all_preds, columns=columns)
+    predictions_and_target_df = pd.DataFrame(all_predictions, columns=columns)
     return predictions_and_target_df
 
 
-def create_test_metrics(fold_predictions, smiles_target, number_of_folds, test_size):
+def create_test_metrics(fold_predictions, smiles_target, number_of_folds):
     all_folds_mse = 0
     all_folds_mae = 0
     all_folds_rsquared = 0
@@ -57,31 +66,19 @@ def calculate_metrics(predictions, target):
     return mse, mae, rsquared
 
 
-def get_training_and_test_data(DATA, TRAINING_SIZE, TESTING_SIZE):
-    X = DATA['smile']
-    Y = DATA['docking_score']
-    from sklearn.model_selection import train_test_split
-    X_train, X_test, y_train, y_test = train_test_split(X, Y, train_size=TRAINING_SIZE, test_size=TESTING_SIZE, random_state=42)
-    train = pd.concat([X_train, y_train], axis=1)
-    test = pd.concat([X_test, y_test], axis=1)
+def get_training_and_test_data(data, training_size, testing_size):
+    x = data['smile']
+    y = data['docking_score']
+    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=training_size, test_size=testing_size, random_state=42)
+    train = pd.concat([x_train, y_train], axis=1)
+    test = pd.concat([x_test, y_test], axis=1)
     return train, test
 
 
 def save_dict(history, identifier):
     result_df = pd.DataFrame.from_dict(history)
-    result_df.to_csv(identifier)
-
-
-def predictions_heat_map(test_predictions_and_target, identifier_test_heat_map, identifier):
-    predictions = test_predictions_and_target["predictions"]
-    target = test_predictions_and_target["target"]
-    fig, ax1 = plt.subplots(1, 1)
-    fig.set_dpi(500)
-    fig.suptitle("Test Heat Map " + identifier, fontsize=10)
-    ax1.set_xlabel('Target', fontsize=10)
-    ax1.set_ylabel('Predictions', fontsize=10)
-    plt.hexbin(target, predictions, gridsize=100, bins='log')
-    fig.savefig(identifier_test_heat_map)
+    result_df.index.name = 'index'
+    result_df.to_csv(identifier, index=False)
 
 
 def get_smiles_dict(path_to_all_smiles):
@@ -95,3 +92,50 @@ def get_smiles_dict(path_to_all_smiles):
     char2int = {ch: ii for ii, ch in int2char.items()}
     dict_size = len(char2int)
     return int2char, char2int, dict_size
+
+
+class TanimotoDataGenerator(Dataset):
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        data = self.data[idx]
+        smile = data[0]
+        fingerprint = data[1]
+        data_copy = copy.deepcopy(self.data)
+        del data_copy[idx]
+        all_distance = []
+        for key, value in data_copy.items():
+            dis = calculate_tanimoto_distance(fingerprint, value[1])
+            all_distance.append(dis)
+
+        result = {'avg': sum(all_distance) / len(all_distance), 'max': max(all_distance), 'min': min(all_distance)}
+        return result
+
+
+def plot_docking_scores_hist(data, directory):
+    plt.hist(data, bins=30)  # density=False would make counts
+    plt.ylabel('Number Of Smiles')
+    plt.xlabel('Docking Score')
+    plt.savefig(directory)
+    plt.show()
+
+
+def plot_tanimoto_hist(data, directory, Info_type):
+    plt.hist(data, bins=30)  # density=False would make counts
+    plt.ylabel('Frequency')
+    plt.xlabel(Info_type)
+    plt.savefig(directory)
+    plt.show()
+
+
+def save_dict_with_one_index(history, identifier):
+    result_df = pd.DataFrame(history, index=[0])
+    result_df.to_csv(identifier, index=False)
+
+
+def calculate_tanimoto_distance(smile1, smile2):
+    return DataStructs.FingerprintSimilarity(smile1, smile2)

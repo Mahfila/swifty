@@ -1,7 +1,9 @@
 *.csv
 *.txt
+*.png
 Datasets
 venv
 /logs
 .idea
+achieves
 
