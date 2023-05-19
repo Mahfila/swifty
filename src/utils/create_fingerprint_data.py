@@ -3,10 +3,10 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint, mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
+from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint, \
+    mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 from src.utils.swift_dock_logger import swift_dock_logger
-
 
 logger = swift_dock_logger()
 info = {
@@ -21,8 +21,9 @@ dataset_dir = "../../datasets"
 
 
 class Training(Dataset):
-    def __init__(self, data_dict):
+    def __init__(self, data_dict, descriptor):
         self.data_dict = data_dict
+        self.descriptor = descriptor
 
     def __len__(self):
         return len(self.data_dict)
@@ -32,38 +33,44 @@ class Training(Dataset):
         smile = str(data['smile'])
         score = data['docking_score']
         score = np.array(score, dtype='float32').reshape(1, )
-        features = eval(descriptor)
+        features = eval(self.descriptor)
         X_Y = np.concatenate((features, score))
         return X_Y
 
 
-targets = ["nsp_sam", "spike"]
-for target in targets:
-    for key, item in info.items():
-        fingerprint_name = key
-        number_of_features = item[0] + 1  # + target
-        descriptor = item[1]
-        path_to_csv_file = f"{dataset_dir}/{target}.csv"
-        data = pd.read_csv(path_to_csv_file)
-        data = data.dropna()
-        data = data[data['smile'].map(len) <= 60]
+def main():
+    targets = ["nsp_sam", "spike", "ace", "nsp"]
+    targets = ["target1", "target2", "target3"]
+    for target in targets:
+        for key, item in info.items():
+            fingerprint_name = key
+            number_of_features = item[0] + 1  # + target
+            descriptor = item[1]
+            path_to_csv_file = f"{dataset_dir}/{target}.csv"
+            data = pd.read_csv(path_to_csv_file)
+            data = data.dropna()
+            data = data[data['smile'].map(len) <= 60]
 
-        smiles_data_train = Training(data)
-        directory = f"{dataset_dir}/{target}_{fingerprint_name}.dat"
-        data_set = np.memmap(directory, dtype=np.float32,
-                             mode='w+', shape=(len(data), item[0] + 1))
-        start_time_test = time.time()
-        init = 0
-        batch_size = 128
-        train_dataloader = DataLoader(smiles_data_train, batch_size=batch_size, shuffle=True, num_workers=8)
-        for i, data in enumerate(tqdm(train_dataloader)):
-            numpy_data = data.numpy()
-            data_set[init:init + numpy_data.shape[0], :] = numpy_data
-            init = init + numpy_data.shape[0]
-        create_time = (time.time() - start_time_test) / 60
-        logger.info(f"Creating Time : {create_time} Minutes")
-        del data_set
-        time_dict = {'creation_time': create_time}
-        # saving_dir = f"{dataset_dir}/{target}_{fingerprint_name}_creation_time.txt"
-        # with open(saving_dir, 'w+') as file:
-        #     file.write(str(time_dict))
+            smiles_data_train = Training(data,descriptor)
+            directory = f"{dataset_dir}/{target}_{fingerprint_name}.dat"
+            data_set = np.memmap(directory, dtype=np.float32,
+                                 mode='w+', shape=(len(data), item[0] + 1))
+            start_time_test = time.time()
+            init = 0
+            batch_size = 128
+            train_dataloader = DataLoader(smiles_data_train, batch_size=batch_size, shuffle=True, num_workers=8)
+            for i, data in enumerate(tqdm(train_dataloader)):
+                numpy_data = data.numpy()
+                data_set[init:init + numpy_data.shape[0], :] = numpy_data
+                init = init + numpy_data.shape[0]
+            create_time = (time.time() - start_time_test) / 60
+            logger.info(f"Creating Time : {create_time} Minutes")
+            del data_set
+            time_dict = {'creation_time': create_time}
+            # saving_dir = f"{dataset_dir}/{target}_{fingerprint_name}_creation_time.txt"
+            # with open(saving_dir, 'w+') as file:
+            #     file.write(str(time_dict))
+
+
+if __name__ == '__main__':
+    main()

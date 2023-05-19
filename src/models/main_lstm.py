@@ -24,7 +24,7 @@ descriptors_dictionary = {'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_a
 
 training_sizes_swift_dock = [7000]
 targets_swift_dock = args.targets
-targets_swift_dock =  ["ace", "spike", "nsp_sam", "nsp"]
+targets_swift_dock =  ["target1"]
 logger.info(f"training_sizes {training_sizes_swift_dock}")
 logger.info(f"targets {targets_swift_dock}", )
 
@@ -41,12 +41,12 @@ dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 +
                         'mac': 167 + 1}
 training_sizes_ml = [7000, 10000, 20000, 50000, 100000, 350000]
 
-number_of_folds = 5
+number_of_folds = 2
 
-training_metrics_dir = '../../results/training_metrics/'
-testing_metrics_dir = '../../results/testing_metrics/'
-test_predictions_dir = '../../results/test_predictions/'
-project_info_dir = '../../results/project_info/'
+training_metrics_dir = '../../results2/training_metrics/'
+testing_metrics_dir = '../../results2/testing_metrics/'
+test_predictions_dir = '../../results2/test_predictions/'
+project_info_dir = '../../results2/project_info/'
 dataset_dir = "../../datasets"
 os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)
@@ -87,7 +87,7 @@ if __name__ == '__main__':
                 data_all = data_all[data_all['smile'].map(len) <= 60]
                 target_len = len(data_all)
                 item_training_size = size * number_of_folds
-                item_testing_size = (target_len - item_training_size)
+                item_testing_size = 100000
 
                 train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,

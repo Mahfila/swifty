@@ -89,7 +89,7 @@ class OtherModels:
             fold_predictions = regressor_obj.predict(self.x_test)
             all_models_predictions.append(fold_predictions)
         self.test_time = (time.time() - start_time_test) / 60
-        metrics_dict_test = create_test_metrics(all_models_predictions, self.y_test, self.number_of_folds, self.test_size)
+        metrics_dict_test = create_test_metrics(all_models_predictions, self.y_test, self.number_of_folds)
         predictions_and_target_df = create_fold_predictions_and_target_df(all_models_predictions, self.y_test, self.number_of_folds, self.test_size)
         self.test_metrics = metrics_dict_test
         self.test_predictions_and_target_df = predictions_and_target_df

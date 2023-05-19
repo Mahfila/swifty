@@ -22,6 +22,7 @@ testing_metrics_dir = '../../results/testing_metrics/'
 summarized_results_dir = '../../results/summarized_results/'
 immediate_results_dir = '../../results/immediate_results/'
 os.makedirs(summarized_results_dir, exist_ok=True)
+os.makedirs(immediate_results_dir, exist_ok=True)
 
 
 def summarize_training_results_group_dataset_two(targets, training_sizes):
@@ -183,15 +184,17 @@ def scatter_plot_predictions_one_dimensional(target_lists, model_lists, descript
 
 
 def scatter_plot_predictions(target_lists, model_lists, descriptor_list, training_size):
+    primary_targets = ['target1', 'target2', 'target3','ace', 'spike', 'nsp', 'nsp_sam']
+    original_names = ['Drp1_GTPase', 'RyR2', 'Drp1_MiD49','ace', 'spike', 'nsp', 'nsp_sam']
+    target_name_dict = {primary: original for primary, original in zip(primary_targets, original_names)}
+
+    target_dict = {}
     logger.info(f"Generating Scatter Plot Has Started")
-    fig, ax = plt.subplots(len(target_lists), len(model_lists))
-    font_size = 50
-    fig.suptitle('The first row is for target one, the second row for target two and the last is for target three.', fontsize=font_size + 10)
-    fig.tight_layout(pad=0.4, h_pad=1.7)
-    fig.set_size_inches(70, 30)
+    fig, ax = plt.subplots(len(target_lists), len(model_lists),figsize=(100, 85)) #w,h
+    font_size = 60
+    fig.tight_layout(pad=5, h_pad=27, w_pad=27)
+    fig.subplots_adjust(top=0.95, bottom=0.05,left=0.05, right=0.95)  # Adjust top and bottom margins
     fig.set_dpi(200)
-    plt.xlim([-9, 0])
-    plt.ylim([-8, -2])
     col = 0
     row = 0
     for target in target_lists:
@@ -215,11 +218,14 @@ def scatter_plot_predictions(target_lists, model_lists, descriptor_list, trainin
                 name = 'decision-tree'
             elif model == 'sgdreg':
                 name = 'SGDR'
-            ax[row, col].set_title(name, fontsize=font_size)
+            ax[row, col].set_title(f"{name} - {target_name_dict[target]}", fontsize=font_size)
             ax[row, col].set_xlabel('Actual docking score', fontsize=font_size - 5)
             ax[row, col].set_ylabel('Predicted docking score', fontsize=font_size - 5)
-            ax[row, col].tick_params(axis='x', labelsize=font_size)
+            ax[row, col].tick_params(axis='x', labelsize=font_size, rotation=45)  # Add rotation to x-axis labels
             ax[row, col].tick_params(axis='y', labelsize=font_size)
+            ax[row, col].set_xlim([-11, 1])  # Adjust x-axis limits
+            ax[row, col].set_ylim([-10, -1])  # Adjust y-axis limits
+
             col = col + 1
 
         col = 0
@@ -388,7 +394,10 @@ def creating_training_time(training_sizes, models, target):
 
 
 def ven_diagram(target, models, training_size, descriptor, tok_k):
-    for model in models:
+    num_models = len(models)
+    fig, axes = plt.subplots(nrows=1, ncols=num_models, figsize=(5 * num_models, 5))
+
+    for ax, model in zip(axes, models):
         file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{training_size}_test_predictions.csv"
         logger.info(f"Current File -- {file_name}")
         data = pd.read_csv(file_name)
@@ -396,23 +405,71 @@ def ven_diagram(target, models, training_size, descriptor, tok_k):
         data['ids'] = ids
         target_data = data[['target', 'ids']].astype({"target": float})
         target_data['target'] = target_data['target'].round(2)
-        prediction = data[['f2', 'ids']].astype({"f2": float})
-        prediction['f2'] = prediction['f2'].round(2)
-        prediction = prediction.sort_values('f2')[0:tok_k]
+        prediction = data[['f1', 'ids']].astype({"f1": float})
+        prediction['f1'] = prediction['f1'].round(2)
+        prediction = prediction.sort_values('f1')[0:tok_k]
         target_data = target_data.sort_values('target')[0:tok_k]
         prediction_set = set(prediction['ids'].tolist())
         target_set = set(target_data['ids'].tolist())
         union_len = len(prediction_set.intersection(target_set))
         pred_len = len(prediction_set.difference(target_set))
         tar_len = len(target_set.intersection(prediction_set))
-        if model == 'lstm':
-            fake = 4100
-            pred_len = 10000 - fake
-            union_len = fake
-        v = venn2(subsets=(tar_len, pred_len, union_len), set_labels=['Target', 'Prediction'])
+
+        v = venn2(subsets=(tar_len, pred_len, union_len), set_labels=['Target', 'Prediction'], ax=ax,
+                  set_colors=('blue', 'red'), alpha=0.5)
         for text in v.set_labels:
             text.set_fontsize(20)
-        c = venn2_circles(subsets=(tar_len, pred_len, union_len), linestyle='-', linewidth=2, color="black")
+        c = venn2_circles(subsets=(tar_len, pred_len, union_len), linestyle='-', linewidth=2, color="black", ax=ax)
+
+        name = 'XGBoost'
+        if model == 'lstm':
+            name = 'LSTM'
+        elif model == 'decision_tree':
+            name = 'Decision Tree'
+        elif model == 'sgdreg':
+            name = 'SGDR'
+
+        ax.set_title(f"top 10k using {name}", fontsize=20)
+
+    plt.tight_layout()
+    plt.savefig(f"{graph_results_dir}{target}_ven_diagrams.png", facecolor='w')
+    plt.clf()
+
+
+def ven_diagram_for_single_target(targets, model, training_size, descriptor, tok_k):
+    primary_targets = ['target1', 'target2', 'target3', 'ace', 'spike', 'nsp', 'nsp_sam']
+    original_names = ['Drp1_GTPase', 'RyR2', 'Drp1_MiD49', 'ace', 'spike', 'nsp', 'nsp_sam']
+    target_name_dict = {primary: original for primary, original in zip(primary_targets, original_names)}
+    num_columns = 4
+    num_rows = (len(targets) + num_columns - 1) // num_columns
+
+    fig, axes = plt.subplots(nrows=num_rows, ncols=num_columns, figsize=(5 * num_columns, 5 * num_rows))
+
+    for idx, target in enumerate(targets):
+        current_row = idx // num_columns
+        current_col = idx % num_columns
+
+        file_name = f"{test_predictions_dir}{model}_{target}_{descriptor}_{training_size}_test_predictions.csv"
+        logger.info(f"Current File -- {file_name}")
+        data = pd.read_csv(file_name)
+        ids = [f"l{i}" for i in range(len(data))]
+        data['ids'] = ids
+        target_data = data[['target', 'ids']].astype({"target": float})
+        target_data['target'] = target_data['target'].round(2)
+        prediction = data[['f1', 'ids']].astype({"f1": float})
+        prediction['f1'] = prediction['f1'].round(2)
+        prediction = prediction.sort_values('f1')[0:tok_k]
+        target_data = target_data.sort_values('target')[0:tok_k]
+        prediction_set = set(prediction['ids'].tolist())
+        target_set = set(target_data['ids'].tolist())
+        union_len = len(prediction_set.intersection(target_set))
+        pred_len = len(prediction_set.difference(target_set))
+        tar_len = len(target_set.intersection(prediction_set))
+
+        v = venn2(subsets=(tar_len, pred_len, union_len), set_labels=['Target', 'Prediction'], set_colors=('blue', 'red'), alpha=0.5, ax=axes[current_row, current_col])
+        for text in v.set_labels:
+            text.set_fontsize(20)
+        c = venn2_circles(subsets=(tar_len, pred_len, union_len), linestyle='-', linewidth=2, color="black", ax=axes[current_row, current_col])
         name = 'XGBoost'
         if model == 'lstm':
             name = 'LSTM'
@@ -420,10 +477,17 @@ def ven_diagram(target, models, training_size, descriptor, tok_k):
             name = 'decision-tree'
         elif model == 'sgdreg':
             name = 'SGDR'
-        plt.title(f"top 10k using {name}", fontsize=20)
-        plt.savefig(f"{graph_results_dir}{model}_{target}_ven diagrams", facecolor='w')
-        plt.clf()
+        axes[current_row, current_col].set_title(f"{target_name_dict[target]}", fontsize=20)
 
+    # Remove unused subplots
+    for idx in range(len(targets), num_rows * num_columns):
+        current_row = idx // num_columns
+        current_col = idx % num_columns
+        fig.delaxes(axes[current_row][current_col])
+
+    plt.tight_layout()
+    plt.savefig(f"{graph_results_dir}{model}_ven_diagrams.png", facecolor='w')
+    plt.clf()
 
 def get_project_info(target):
     descriptor = 'morgan_onehot_mac_circular'
@@ -458,7 +522,7 @@ def plot_tanimoto_distances_version_two(target_one, target_two):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(plot_height, plot_width))
     plt.subplots_adjust(hspace=0.3)
     ax1.hist(avg_distances_one, alpha=0.5, color="skyblue", label="spike")
-    ax1.hist(avg_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax1.hist(avg_distances_two, alpha=0.5, color="salmon", bins=bins, label="Drp1_GTPase")
     ax1.legend(loc="upper left", prop={'size': font_size})
     ax1.set_xlabel('Fingerprints average similarity', fontsize=font_size)
     ax1.set_ylabel('Frequency', fontsize=font_size)
@@ -466,7 +530,7 @@ def plot_tanimoto_distances_version_two(target_one, target_two):
     ax1.tick_params(axis='y', labelsize=font_size)
 
     ax2.hist(max_distances_one, alpha=0.5, color="skyblue", bins=bins, label="spike")
-    ax2.hist(max_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax2.hist(max_distances_two, alpha=0.5, color="salmon", bins=bins, label="Drp1_GTPase")
     ax2.legend(loc='upper left', prop={'size': font_size})
     ax2.set_xlabel('Fingerprints maximum similarity', fontsize=font_size)
     ax2.set_ylabel('Frequency', fontsize=font_size)
@@ -474,7 +538,7 @@ def plot_tanimoto_distances_version_two(target_one, target_two):
     ax2.tick_params(axis='y', labelsize=font_size)
 
     ax3.hist(min_distances_one, alpha=0.5, color="skyblue", bins=bins, label="spike")
-    ax3.hist(min_distances_two, alpha=0.5, color="salmon", bins=bins, label="target one")
+    ax3.hist(min_distances_two, alpha=0.5, color="salmon", bins=bins, label="Drp1_GTPase")
     ax3.legend(loc='upper right', prop={'size': font_size})
     ax3.set_xlabel('Fingerprints minimum similarity', fontsize=font_size)
     ax3.set_ylabel('Frequency', fontsize=font_size)

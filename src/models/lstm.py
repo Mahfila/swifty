@@ -38,13 +38,12 @@ class SwiftDock:
         self.test_time = None
 
     def cross_validate(self):
-
         self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
         fold_mse, fold_mae, fold_rsquared = 0, 0, 0
-        number_of_epochs = 9
+        number_of_epochs = 5
         start_time_train_val = time.time()
         for fold in range(self.number_of_folds):
             net = AttentionNetwork(self.feature_dim)
@@ -54,10 +53,10 @@ class SwiftDock:
             temp_data = pd.concat(temp_data)
             smiles_data_train = DataGenerator(df_split[fold], descriptor=self.descriptor)  # train
             logger.info(f'size of training {len(smiles_data_train)}')
-            train_dataloader = DataLoader(smiles_data_train, batch_size=128, shuffle=True, num_workers=16)
+            train_dataloader = DataLoader(smiles_data_train, batch_size=32, shuffle=True, num_workers=8)
             fold_test_dataloader_class = DataGenerator(temp_data, descriptor=self.descriptor)
             logger.info(f'size of testing {len(fold_test_dataloader_class)}')
-            fold_test_dataloader = DataLoader(fold_test_dataloader_class, batch_size=128, shuffle=False, num_workers=16)
+            fold_test_dataloader = DataLoader(fold_test_dataloader_class, batch_size=32, shuffle=False, num_workers=8)
             criterion = nn.MSELoss()
             # training
             model, metrics_dict = train_model(train_dataloader, net, criterion,
@@ -94,7 +93,7 @@ class SwiftDock:
         logger.info('Starting testing...')
         all_models_predictions = []
         smiles_data_test = DataGenerator(self.test_data, descriptor=self.descriptor)
-        test_dataloader = DataLoader(smiles_data_test, batch_size=128, shuffle=False, num_workers=16)
+        test_dataloader = DataLoader(smiles_data_test, batch_size=16, shuffle=False, num_workers=6)
         start_time_test = time.time()
         for fold in range(self.number_of_folds):
             logger.info(f"making fold {fold} predictions")
