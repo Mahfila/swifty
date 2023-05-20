@@ -462,9 +462,9 @@ def ven_diagram_for_single_target(targets, model, training_size, descriptor, tok
         target_data = target_data.sort_values('target')[0:tok_k]
         prediction_set = set(prediction['ids'].tolist())
         target_set = set(target_data['ids'].tolist())
-        union_len = len(prediction_set.intersection(target_set))
-        pred_len = len(prediction_set.difference(target_set))
-        tar_len = len(target_set.intersection(prediction_set))
+        union_len = round((len(prediction_set.intersection(target_set))/tok_k) *100,2)
+        pred_len = round((len(prediction_set.difference(target_set))/tok_k) *100,2)
+        tar_len = round((len(target_set.intersection(prediction_set)) /tok_k) *100,2)
 
         v = venn2(subsets=(tar_len, pred_len, union_len), set_labels=['Target', 'Prediction'], set_colors=('blue', 'red'), alpha=0.5, ax=axes[current_row, current_col])
         for text in v.set_labels:

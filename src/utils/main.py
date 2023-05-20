@@ -24,8 +24,8 @@ training_sizes_other = [7000, 10000, 50000]
 # tok_k = 10000
 list_of_labels = []
 #ven_diagram('target2', models, 7000, descriptor, 10000)
-# ven_diagram_for_single_target(primary_targets+targets, 'decision_tree', 7000, descriptor, 10000)
-scatter_plot_predictions(targets, models, descriptor, 20000)
+ven_diagram_for_single_target(primary_targets+targets, 'lstm', 7000, descriptor, 10000)
+#scatter_plot_predictions(targets, models, descriptor, 20000)
 # scatter_plot_predictions_one_dimensional(primary_targets, models1, descriptor, 7000)
 title1 = "target three"
 #correlation_graph('target3', title1, models, labels, training_sizes_other)

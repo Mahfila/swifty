@@ -41,12 +41,12 @@ dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 +
                         'mac': 167 + 1}
 training_sizes_ml = [7000, 10000, 20000, 50000, 100000, 350000]
 
-number_of_folds = 2
+number_of_folds = 5
 
-training_metrics_dir = '../../results2/training_metrics/'
-testing_metrics_dir = '../../results2/testing_metrics/'
-test_predictions_dir = '../../results2/test_predictions/'
-project_info_dir = '../../results2/project_info/'
+training_metrics_dir = '../../results/training_metrics/'
+testing_metrics_dir = '../../results/testing_metrics/'
+test_predictions_dir = '../../results/test_predictions/'
+project_info_dir = '../../results/project_info/'
 dataset_dir = "../../datasets"
 os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)

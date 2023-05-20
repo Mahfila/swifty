@@ -102,7 +102,7 @@ class SwiftDock:
         self.test_time = (time.time() - start_time_test) / 60
 
         smiles_target = self.test_data['docking_score'].tolist()
-        metrics_dict_test = create_test_metrics(all_models_predictions, smiles_target, self.number_of_folds, self.test_size)
+        metrics_dict_test = create_test_metrics(all_models_predictions, smiles_target, self.number_of_folds)
         predictions_and_target_df = create_fold_predictions_and_target_df(all_models_predictions, smiles_target, self.number_of_folds, self.test_size)
         self.test_metrics = metrics_dict_test
         self.test_predictions_and_target_df = predictions_and_target_df
