@@ -6,3 +6,10 @@ In this study, various machine learning (ML) models were tested in an effort to 
 Among the ML models utilized is a neural network model based on Long Short-Term Memory (LSTM). LSTMs are typically deployed in the handling of sequence data within Natural Language Processing (NLP) contexts, such as speech recognition. The specific LSTM model employed in this study is combined with an attention mechanism to enable the neural network model to more effectively distill useful characteristics from incoming ligand data. Pytorch, a widely-used Python ML framework, was utilized to implement the LSTM.
 
 Additionally, several other models were also explored, including XGBoost, which was executed via the XGBoost Python library, as well as decision tree regression and stochastic gradient descent models drawn from the scikit-learn Python library.
+
+
+# Setting up the environment
+
+1. Make sure Python 3.7 is installed on your system
+2. Create a virtual environment and run  pip install -r requirements.txt
+3. 

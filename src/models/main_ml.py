@@ -12,17 +12,6 @@ parser.add_argument("--descriptors", type=str, help="specify the training descri
 parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs='+')
 args = parser.parse_args()
 
-#####Swift Dock Arugments
-
-descriptors_dictionary = {'mac': [167, 'mac_keys_fingerprints(smile)'],
-                          'onehot': [3500, 'one_hot_encode(smile)'],
-                          'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
-                          'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)']}
-
-training_sizes_swift_dock = args.training_sizes
-targets_swift_dock = args.targets
-logger.info(f"training_sizes {training_sizes_swift_dock}")
-logger.info(f"targets {targets_swift_dock}", )
 
 ##### Other Models  Arugments
 regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
