@@ -38,12 +38,13 @@ class SwiftDock:
         self.test_time = None
 
     def cross_validate(self):
+        logger.info('Starting training...')
         self.train_data, self.test_data = get_training_and_test_data(self.target_path, self.train_size, self.test_size)
         all_train_metrics = []
         df_split = np.array_split(self.train_data, self.number_of_folds)
         all_networks = []
         fold_mse, fold_mae, fold_rsquared = 0, 0, 0
-        number_of_epochs = 5
+        number_of_epochs = 1
         start_time_train_val = time.time()
         for fold in range(self.number_of_folds):
             net = AttentionNetwork(self.feature_dim)
@@ -52,10 +53,8 @@ class SwiftDock:
             temp_data.pop(fold)
             temp_data = pd.concat(temp_data)
             smiles_data_train = DataGenerator(df_split[fold], descriptor=self.descriptor)  # train
-            logger.info(f'size of training {len(smiles_data_train)}')
             train_dataloader = DataLoader(smiles_data_train, batch_size=32, shuffle=True, num_workers=8)
             fold_test_dataloader_class = DataGenerator(temp_data, descriptor=self.descriptor)
-            logger.info(f'size of testing {len(fold_test_dataloader_class)}')
             fold_test_dataloader = DataLoader(fold_test_dataloader_class, batch_size=32, shuffle=False, num_workers=8)
             criterion = nn.MSELoss()
             # training
@@ -118,4 +117,4 @@ class SwiftDock:
                              str(self.number_of_folds) + " fold_validation_time": [self.cross_validation_time], "testing_time": [self.test_time]}
         identifier_project_info = f"{self.project_info_dir}{self.identifier}_project_info.csv"
         save_dict(project_info_dict, identifier_project_info)
-        logger.info('Training information has been saved.')
+        logger.info('Training and Testing information has been saved.')

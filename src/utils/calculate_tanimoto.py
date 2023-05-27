@@ -100,11 +100,10 @@ def calculate_tanimoto(target_name):
 
 
 if __name__ == '__main__':
-    calculate_tanimoto("target1")
-    calculate_tanimoto("target2")
-    calculate_tanimoto("target3")
+    calculate_tanimoto("Drp1_GTPas")
+    calculate_tanimoto("Drp1_MiD49")
+    calculate_tanimoto("RyR2")
     calculate_tanimoto("nsp")
     calculate_tanimoto("nsp_sam")
     calculate_tanimoto("spike")
     calculate_tanimoto("ace")
-    calculate_tanimoto("spike")

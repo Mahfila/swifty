@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint, \
+from src.utils.smiles_featurizers import  \
     mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 from src.utils.swift_dock_logger import swift_dock_logger
@@ -11,12 +11,8 @@ from src.utils.swift_dock_logger import swift_dock_logger
 logger = swift_dock_logger()
 info = {
     'onehot': [3500, 'one_hot_encode(smile)'],
-    'morgan_onehot_mac_circular': [4755, 'morgan_fingerprints_mac_and_one_hot_descriptors_CircularFingerprint(smile)'],
     'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
     'mac': [167, 'mac_keys_fingerprints(smile)']}
-
-info = {
-    'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)']}
 dataset_dir = "../../datasets"
 
 
@@ -44,7 +40,6 @@ def main():
     for target in targets:
         for key, item in info.items():
             fingerprint_name = key
-            number_of_features = item[0] + 1  # + target
             descriptor = item[1]
             path_to_csv_file = f"{dataset_dir}/{target}.csv"
             data = pd.read_csv(path_to_csv_file)

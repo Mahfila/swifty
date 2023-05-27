@@ -55,12 +55,3 @@ def morgan_fingerprints_mac_and_one_hot(smile):
     return features
 
 
-def morgan_fingerprints_mac_and_one_hot_descriptors_circular_fingerprint(smile):
-    fingerprint_features = morgan_fingerprints(smile)
-    mac_features = mac_keys_fingerprints(smile)
-    one_hot_encoding = one_hot_encode(smile)
-    pubchem = circular_fingerprint(smile)
-    features = np.concatenate((fingerprint_features, one_hot_encoding))
-    features = np.concatenate((features, mac_features))
-    features = np.concatenate((features, pubchem))
-    return features

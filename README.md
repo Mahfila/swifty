@@ -12,4 +12,9 @@ Additionally, several other models were also explored, including XGBoost, which 
 
 1. Make sure Python 3.7 is installed on your system
 2. Create a virtual environment and run  pip install -r requirements.txt
-3. 
+## Model the targets using LSTM
+1. To create results using LSTM, run `python main_lstm.py --targets nsp --descriptors mac --training_sizes 70`. This will train molecules of the nps target using mac descriptor
+## Model the targets using Other models
+1.
+
+

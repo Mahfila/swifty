@@ -19,17 +19,13 @@ descriptors_dictionary = {'mac': [167, 'mac_keys_fingerprints(smile)'],
                           'onehot': [3500, 'one_hot_encode(smile)'],
                           'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)']}
 
-training_sizes_swift_dock = [7000]
+training_sizes_swift_dock = args.training_sizes
 targets_swift_dock = args.targets
-targets_swift_dock = ["target1"]
-logger.info(f"training_sizes {training_sizes_swift_dock}")
-logger.info(f"targets {targets_swift_dock}", )
 
 descriptors_dictionary_command_line = {}
 for desc in args.descriptors:
     if desc in descriptors_dictionary:
         descriptors_dictionary_command_line[desc] = [descriptors_dictionary[desc][0], descriptors_dictionary[desc][1]]
-print('descriptors_dictionary_command_line', descriptors_dictionary_command_line)
 
 number_of_folds = 5
 
@@ -57,9 +53,9 @@ def train_models(training_metrics_dir, testing_metrics_dir, test_predictions_dir
 
 if __name__ == '__main__':
     for target in targets_swift_dock:
-        for key, value in descriptors_dictionary.items():
+        for key, value in descriptors_dictionary_command_line.items():
             for size in training_sizes_swift_dock:
-                identifier = f"swift_dock_{target}_{key}_{str(size)}"
+                identifier = f"lstm_{target}_{key}_{str(size)}"
                 logger.info(f"Identifier {identifier}")
                 num_of_features = value[0]
                 descriptor = value[1]

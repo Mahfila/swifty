@@ -13,17 +13,14 @@ parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs
 args = parser.parse_args()
 
 
-##### Other Models  Arugments
+##### Models  Arugments
 regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
-targets_list_ml_models = {'target1': 3437838}
 dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 + 1, 'morgan_onehot_mac': 4691 + 1,
                         'mac': 167 + 1}
 
-dimensions_ml_models = {'morgan_onehot_mac': 4691 + 1}
 
 training_sizes_ml = args.training_sizes
-training_sizes_ml = [7000]
-targets = ["ace", "spike", "nsp_sam", "nsp"]
+targets = args.targets
 
 number_of_folds = 5
 
