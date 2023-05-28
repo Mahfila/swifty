@@ -54,7 +54,6 @@ if __name__ == '__main__':
                     data = np.memmap(data_set_path, dtype=np.float32)
                     target_length = data.shape[0] // data_dim
                     data = data.reshape((target_length, data_dim))
-
                     training_size_ml = size * number_of_folds
                     testing_size_ml = (target_length - training_size_ml)
 

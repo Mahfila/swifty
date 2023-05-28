@@ -6,7 +6,7 @@ from src.utils.swift_dock_logger import swift_dock_logger
 
 logger = swift_dock_logger()
 
-parser = argparse.ArgumentParser(description="train code for training a network to estimate depth",
+parser = argparse.ArgumentParser(description="train code for fast docking",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
 parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')

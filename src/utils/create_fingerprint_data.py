@@ -1,3 +1,4 @@
+import argparse
 import time
 import pandas as pd
 import numpy as np
@@ -35,17 +36,18 @@ class Training(Dataset):
 
 
 def main():
-    targets = ["nsp_sam", "spike", "ace", "nsp"]
-    targets = ["target1", "target2", "target3"]
-    for target in targets:
+    parser = argparse.ArgumentParser(description="create data ",
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--targets", type=str, help="specify a target, this can be a single target or a lists ", nargs='+')
+    args = parser.parse_args()
+
+    for target in args.targets:
         for key, item in info.items():
             fingerprint_name = key
             descriptor = item[1]
             path_to_csv_file = f"{dataset_dir}/{target}.csv"
             data = pd.read_csv(path_to_csv_file)
             data = data.dropna()
-            data = data[data['smile'].map(len) <= 60]
-
             smiles_data_train = Training(data,descriptor)
             directory = f"{dataset_dir}/{target}_{fingerprint_name}.dat"
             data_set = np.memmap(directory, dtype=np.float32,
