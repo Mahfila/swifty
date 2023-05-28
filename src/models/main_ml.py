@@ -15,7 +15,7 @@ args = parser.parse_args()
 
 ##### Models  Arugments
 regressors_dict_ml_models = {'decision_tree': 'DecisionTreeRegressor()', 'xgboost': 'XGBRegressor()', 'sgdreg': 'SGDRegressor()'}
-dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac_circular': 4755 + 1, 'morgan_onehot_mac': 4691 + 1,
+dimensions_ml_models = {'onehot': 3500 + 1,  'morgan_onehot_mac': 4691 + 1,
                         'mac': 167 + 1}
 
 

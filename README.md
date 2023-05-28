@@ -14,8 +14,8 @@ Additionally, several other models were also explored, including XGBoost, which 
 2. Create a virtual environment and run  pip install -r requirements.txt
 ## Model the targets using LSTM
 1. To create results using LSTM, run `python main_lstm.py --targets nsp --descriptors mac --training_sizes 70`. This will train molecules of the nps target using mac descriptor
-## Model the targets using Other models
-1. To train the models using other models other than lstm, first create  the dataset. Example  `create_fingerprint_data.py --targets nsp`. This will create the dataset for the nsp target.
+## Model the targets using Other models (from scikit-learn)
+1. To train the models using other models other than lstm, first create  the dataset. Example  `python create_fingerprint_data.py --targets nsp`. This will create the dataset for the nsp target.
 2. To create results using the other models, run `python main_ml.py --targets nsp --descriptors mac --training_sizes 70`. This will train molecules of the nsp target using mac descriptor.
 
 
