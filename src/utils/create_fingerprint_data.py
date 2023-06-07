@@ -4,12 +4,11 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import  \
+from src.utils.smiles_featurizers import \
     mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
 from src.utils.swift_dock_logger import swift_dock_logger
 
-logger = swift_dock_logger()
 info = {
     'onehot': [3500, 'one_hot_encode(smile)'],
     'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
@@ -17,7 +16,7 @@ info = {
 dataset_dir = "../../datasets"
 
 
-class Training(Dataset):
+class FeatureGenerator(Dataset):
     def __init__(self, data_dict, descriptor):
         self.data_dict = data_dict
         self.descriptor = descriptor
@@ -35,20 +34,15 @@ class Training(Dataset):
         return X_Y
 
 
-def main():
-    parser = argparse.ArgumentParser(description="create data ",
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--targets", type=str, help="specify a target, this can be a single target or a lists ", nargs='+')
-    args = parser.parse_args()
-
-    for target in args.targets:
+def create_features(targets, info):
+    for target in targets:
         for key, item in info.items():
             fingerprint_name = key
             descriptor = item[1]
             path_to_csv_file = f"{dataset_dir}/{target}.csv"
             data = pd.read_csv(path_to_csv_file)
             data = data.dropna()
-            smiles_data_train = Training(data,descriptor)
+            smiles_data_train = FeatureGenerator(data, descriptor)
             directory = f"{dataset_dir}/{target}_{fingerprint_name}.dat"
             data_set = np.memmap(directory, dtype=np.float32,
                                  mode='w+', shape=(len(data), item[0] + 1))
@@ -70,4 +64,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    logger = swift_dock_logger()
+    parser = argparse.ArgumentParser(
+        description="Featurize molecules for the targets that will be trained with sklearn "
+                    "models",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--targets", type=str, help="to create the binary files for", nargs='+')
+    args = parser.parse_args()
+    create_features(args.targets, info)

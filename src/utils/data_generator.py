@@ -19,3 +19,19 @@ class DataGenerator(Dataset):
         features = torch.from_numpy(features.reshape(features.shape[0], 1))
         score = torch.tensor([score])
         return features, score
+
+
+class InferenceDataGenerator(Dataset):
+    def __init__(self, data_dict, descriptor):
+        self.data_dict = data_dict
+        self.descriptor = descriptor
+
+    def __len__(self):
+        return len(self.data_dict)
+
+    def __getitem__(self, idx):
+        data = self.data_dict.iloc[idx]
+        smile = str(data['smile'])
+        features = eval(self.descriptor)
+        features = torch.from_numpy(features.reshape(features.shape[0], 1))
+        return features

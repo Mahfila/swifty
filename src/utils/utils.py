@@ -30,6 +30,17 @@ def test_model(test_dataloader, net):
     return smiles_prediction
 
 
+def inference(test_dataloader, net):
+    smiles_prediction = []
+    with torch.no_grad():
+        for i, features in enumerate(test_dataloader):
+            features = features.squeeze()
+            features = features.unsqueeze(0)
+            outputs = net(features)
+            smiles_prediction.extend(outputs.squeeze().tolist())
+    return smiles_prediction
+
+
 def create_fold_predictions_and_target_df(fold_predictions, smiles_target, number_of_folds, test_size):
     all_predictions = np.zeros((test_size, number_of_folds + 1))
     for i in range(number_of_folds):
@@ -69,10 +80,28 @@ def calculate_metrics(predictions, target):
 def get_training_and_test_data(data, training_size, testing_size):
     x = data['smile']
     y = data['docking_score']
-    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=training_size, test_size=testing_size, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, train_size=training_size, test_size=testing_size,
+                                                        random_state=42)
     train = pd.concat([x_train, y_train], axis=1)
     test = pd.concat([x_test, y_test], axis=1)
     return train, test
+
+
+def get_data_splits(data, training_count, testing_count, validation_count):
+    x = data['smile']
+    y = data['docking_score']
+    total_data = data.shape[0]
+    assert training_count + testing_count + validation_count == total_data, "The counts must sum up to the total number of data points"
+    x_temp, x_test, y_temp, y_test = train_test_split(x, y, test_size=testing_count, random_state=42)
+    # Adjust training size to account for initial split
+    adjusted_train_count = training_count / (1 - (testing_count / total_data))
+    x_train, x_val, y_train, y_val = train_test_split(x_temp, y_temp, train_size=int(adjusted_train_count),
+                                                      random_state=42)
+
+    train = pd.concat([x_train, y_train], axis=1)
+    test = pd.concat([x_test, y_test], axis=1)
+    validation = pd.concat([x_val, y_val], axis=1)
+    return train, test, validation
 
 
 def save_dict(history, identifier):

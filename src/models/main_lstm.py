@@ -8,9 +8,10 @@ logger = swift_dock_logger()
 
 parser = argparse.ArgumentParser(description="train code for fast docking",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
+parser.add_argument("--targets", type=str, help="specify the target protein to", nargs='+')
 parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
-parser.add_argument("--training_sizes", type=int, help="number of epochs", nargs='+')
+parser.add_argument("--training_sizes", type=int, help="Training and cross validation size", nargs='+')
+parser.add_argument("--cross_validate", type=bool, help="If to use 5 cross validation")
 args = parser.parse_args()
 
 #####Swift Dock Arguments
@@ -29,24 +30,36 @@ for desc in args.descriptors:
 
 number_of_folds = 5
 
-training_metrics_dir = '../../results/training_metrics/'
-testing_metrics_dir = '../../results/testing_metrics/'
-test_predictions_dir = '../../results/test_predictions/'
-project_info_dir = '../../results/project_info/'
+training_metrics_dir = '../../results6/validation_metrics/'
+testing_metrics_dir = '../../results6/testing_metrics/'
+test_predictions_dir = '../../results6/test_predictions/'
+project_info_dir = '../../results6/project_info/'
+serialized_models_path = '../../results6/serialized_models/'
 dataset_dir = "../../datasets"
 os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
 os.makedirs(project_info_dir, exist_ok=True)
+os.makedirs(serialized_models_path, exist_ok=True)
 
 
 def train_models(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
-                 target_path, train_size, test_size, identifier, number_of_folds, descriptor, feature_dim):
+                 target_path, train_size, test_size, val_size, identifier, number_of_folds, descriptor, feature_dim,
+                 serialized_models_path):
+    cross_validate = False
+    if args.cross_validate:
+        cross_validate = True
     model = SwiftDock(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
-                      target_path=target_path, train_size=train_size, test_size=test_size,
+                      target_path=target_path, train_size=train_size, test_size=test_size, val_size=val_size,
                       identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
-                      feature_dim=feature_dim)
-    model.cross_validate()
+                      feature_dim=feature_dim, serialized_models_path=serialized_models_path,cross_validate=cross_validate)
+    if args.cross_validate:
+        model.split_data(cross_validate=True)
+        model.train()
+        model.diagnose()
+    else:
+        model.split_data(cross_validate=False)
+        model.train()
     model.test()
     model.save_results()
 
@@ -63,11 +76,15 @@ if __name__ == '__main__':
                 data_all = pd.read_csv(path_to_csv_file)
                 data_all = data_all.dropna()
                 target_len = len(data_all)
-                item_training_size = size * number_of_folds
-                item_testing_size = (target_len - item_training_size)
+                item_val_size = 0
+                if args.cross_validate:
+                    item_val_size = size * number_of_folds
+                    item_testing_size = (target_len - item_val_size - size)
+                else:
+                    item_testing_size = (target_len - size)
 
                 train_models(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
-                             target_path=data_all, train_size=item_training_size, test_size=item_testing_size,
+                             target_path=data_all, train_size=size, test_size=item_testing_size, val_size=item_val_size,
                              identifier=identifier, number_of_folds=number_of_folds, descriptor=descriptor,
-                             feature_dim=num_of_features)
+                             feature_dim=num_of_features, serialized_models_path=serialized_models_path)
