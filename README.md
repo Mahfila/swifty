@@ -31,7 +31,7 @@ This  will train the lstm model for two targets which are 'my_target' and 'my_ta
 3. Under src/utils, run `python create_fingerprint_data.py --targets my_target`. This will create the dataset for the 'my_target' target.
 4. Next, under src/models run `python main_ml.py --targets my_target --descriptors mac --training_sizes 50 --regressor sgreg --cross_validate True`. This will train the sgreg model using 'my_target' target us for training size of 50 with cross_validation.
 
-# Making Prediction for your target with other models (not lstm)
+# Making Prediction for your target with other models (sgreg, xgboost, decision tree)
 1. For the molecules you want to predict the docking scores of. Make sure your input csv has the same format at input.csv in the dataset folder
 2. Under src/models, run `python other_models_inference.py --input_file --output_dir --model_id`
 3. The model_id is the path to the model of your choice that you get after training that is saved under results/serialized_models. Example 'lstm_target_mac_50_model.pt'
