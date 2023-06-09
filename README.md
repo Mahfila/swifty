@@ -13,12 +13,11 @@ Additionally, several other models were also explored, including XGBoost, which 
 1. Make sure Python 3.7 is installed on your system
 2. Create a virtual environment and run  pip install -r requirements.txt
 ## Training Using LSTM
-1. There are many options to train the lstm model depending on the target, descriptor and training_size of your choice, you can also use 5 fold cross validation. So lets you have a target named 'my_target' and you want use the mac descriptor and a training size of 50 molecules with 5 fold cross validation. Use this steps.
+### First build a model and get validation results 
+ There are many options to train the lstm model depending on the target, descriptor and training_size of your choice, you can also use 5 fold cross validation. So lets you have a csv file named 'docking_scores.csv' and you want use the mac descriptor and using 50 molecules selected randomly with 5 fold cross validation. Use this steps.
    1. Put your target in the dataset folder. You should use the format of the sample test.csv target in the dataset folder.
-   2. Example -  src/models run `python main_lstm.py --targets my_target --descriptors mac --training_sizes 70 --cross_validation False`. This will train molecules of the 'my_target' target using mac descriptor without 5 cross validation
-3. You can also specify multiple arguments in this way. Example `python main_lstm.py --targets my_target my_target1 --descriptors mac onehot --training_sizes 70 100 --cross_validation False` \
-This  will train the lstm model for two targets which are 'my_target' and 'my_target1' for the mac and onehot descriptor using training sizes 70 and 100. This will not use cross validation.
-4. The results will be saved in the results folder
+   2. Example -  src/models run `python main_lstm.py --input docking_scores.csv --descriptors mac --training_sizes 50 --cross_validation True`. This will train a model using 50 molecules selected randomly from target 'docking_scores.csv' file using mac descriptor without 5 cross validation
+4. Above code will produce validation_scores.txt file where different performance metrics (R-squared, mean absolute error). This will give you information about the prediction power of this model
 
 # Making Prediction for your target using LSTM
 1. For the molecules you want to predict the docking scores of. Make sure your input csv has the same format at input.csv in the dataset folder
