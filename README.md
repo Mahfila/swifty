@@ -37,7 +37,7 @@ Example, Under src/models,run `python other_models_inference.py --input_file mol
 
 
 ## Training Using other models (from scikit-learn)
-- To train the models using other models other than lstm, first create the dataset. For docking_scores.csv file that contains smiles and docking scores. If for example you want use the mac descriptor and a training size of 50 molecules with 5 fold cross validation. Use these steps.
+To train the models using other models other than lstm, first create the dataset. For docking_scores.csv file that contains smiles and docking scores. If for example you want use the mac descriptor and a training size of 50 molecules with 5 fold cross validation. Use these steps.
 1. Under src/utils, run `python create_fingerprint_data.py --input docking_scores.csv --descriptors mac`. This will create the dataset for the 'docking_scores.csv' using the mac descriptor.
 2. Next, under src/models run `python main_ml.py --input docking_scores.csv --descriptors mac --training_sizes 50 --regressor sgreg`. This will train the sgreg model using the molecules in docking_scores.csv for training size of 50 with for mac descriptor.
 3. Above code will produce a result directory with 5 folders. Below are the folders created
