@@ -117,7 +117,7 @@ class OtherModels:
                          'average_fold_rsquared': [average_fold_r2]}
         self.cross_validation_metrics = train_metrics
         self.all_regressors = regressors_list
-        identifier_train_val_metrics = f"{self.training_metrics_dir}{self.identifier}_train_metrics.csv"
+        identifier_train_val_metrics = f"{self.training_metrics_dir}{self.identifier}_cross_validation_metrics.csv"
         save_dict(self.cross_validation_metrics, identifier_train_val_metrics)
 
     def test(self):
@@ -167,7 +167,7 @@ class OtherModels:
         dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac': 4691 + 1,
                                 'mac': 167 + 1}
         new_dict = {descriptor: info[descriptor]}
-        create_features(['tmp'], new_dict)
+        create_features(['tmp.csv'], new_dict)
         os.remove(tmp_path)
         data_set_path = f'../../datasets/tmp_{descriptor}.dat'
         data = np.memmap(data_set_path, dtype=np.float32)

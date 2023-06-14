@@ -8,11 +8,11 @@ from src.utils.swift_dock_logger import swift_dock_logger
 
 parser = argparse.ArgumentParser(description="train code for fast docking",
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-parser.add_argument("--targets", type=str, help="specify the target protein to ", nargs='+')
+parser.add_argument("--input", type=str, help="specify the target protein to ", nargs='+')
 parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
 parser.add_argument("--training_sizes", type=int, help="Training and cross validation size", nargs='+')
-parser.add_argument("--cross_validate", type=bool, help="If to use 5 cross validation")
 parser.add_argument("--regressors", type=str, help="If to use 5 cross validation", nargs='+')
+parser.add_argument("--cross_validate", type=bool, help="If to use 5 cross validation")
 args = parser.parse_args()
 
 
@@ -23,7 +23,7 @@ dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac': 4691 + 1,
                         'mac': 167 + 1}
 
 training_sizes_ml = args.training_sizes
-targets = args.targets
+targets = args.input
 descriptors_dictionary_command_line = {}
 regressor_command_line = {}
 
@@ -76,8 +76,8 @@ if __name__ == '__main__':
         for regressor_id, regressor in regressor_command_line.items():
             for data_file, data_dim in descriptors_dictionary_command_line.items():
                 for size in training_sizes_ml:
-                    data_set_path = f"{dataset_dir}{target}_{data_file}.dat"
-                    identifier = f"{regressor_id}_{target}_{data_file}_{str(size)}"
+                    data_set_path = f"{dataset_dir}{target.split('.')[0]}_{data_file}.dat"
+                    identifier = f"{regressor_id}_{target.split('.')[0]}_{data_file}_{str(size)}"
                     data = np.memmap(data_set_path, dtype=np.float32)
                     target_length = data.shape[0] // data_dim
                     data = data.reshape((target_length, data_dim))

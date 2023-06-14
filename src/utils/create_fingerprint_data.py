@@ -15,6 +15,8 @@ info = {
     'mac': [167, 'mac_keys_fingerprints(smile)']}
 dataset_dir = "../../datasets"
 
+logger = swift_dock_logger()
+
 
 class FeatureGenerator(Dataset):
     def __init__(self, data_dict, descriptor):
@@ -39,11 +41,11 @@ def create_features(targets, info):
         for key, item in info.items():
             fingerprint_name = key
             descriptor = item[1]
-            path_to_csv_file = f"{dataset_dir}/{target}.csv"
+            path_to_csv_file = f"{dataset_dir}/{target}"
             data = pd.read_csv(path_to_csv_file)
             data = data.dropna()
             smiles_data_train = FeatureGenerator(data, descriptor)
-            directory = f"{dataset_dir}/{target}_{fingerprint_name}.dat"
+            directory = f"{dataset_dir}/{target.split('.')[0]}_{fingerprint_name}.dat"
             data_set = np.memmap(directory, dtype=np.float32,
                                  mode='w+', shape=(len(data), item[0] + 1))
             start_time_test = time.time()
@@ -64,11 +66,16 @@ def create_features(targets, info):
 
 
 if __name__ == '__main__':
-    logger = swift_dock_logger()
     parser = argparse.ArgumentParser(
         description="Featurize molecules for the targets that will be trained with sklearn "
                     "models",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument("--targets", type=str, help="to create the binary files for", nargs='+')
+    parser.add_argument("--input", type=str, help="to create the binary files for", nargs='+')
+    parser.add_argument("--descriptors", type=str, help="specify the training descriptor", nargs='+')
     args = parser.parse_args()
-    create_features(args.targets, info)
+    descriptors_dictionary_command_line = {}
+    for desc in args.descriptors:
+        if desc in info:
+            descriptors_dictionary_command_line[desc] = [info[desc][0],
+                                                         info[desc][1]]
+    create_features(args.input, descriptors_dictionary_command_line)
