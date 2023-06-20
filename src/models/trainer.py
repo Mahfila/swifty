@@ -1,4 +1,4 @@
-from src.utils.swift_dock_logger import swift_dock_logger
+from swift_dock_logger import swift_dock_logger
 logger = swift_dock_logger()
 
 

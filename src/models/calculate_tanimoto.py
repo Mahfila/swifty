@@ -6,7 +6,7 @@ import time
 import warnings
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from src.utils.utils import TanimotoDataGenerator, save_dict, save_dict_with_one_index
+from utils import TanimotoDataGenerator, save_dict, save_dict_with_one_index
 from tqdm import tqdm
 
 mpl.rcParams['figure.dpi'] = 100

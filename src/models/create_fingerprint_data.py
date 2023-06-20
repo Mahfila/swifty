@@ -4,10 +4,8 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from torch.utils.data import Dataset, DataLoader
-from src.utils.smiles_featurizers import \
-    mac_keys_fingerprints, one_hot_encode, morgan_fingerprints_mac_and_one_hot
 
-from src.utils.swift_dock_logger import swift_dock_logger
+from swift_dock_logger import swift_dock_logger
 
 info = {
     'onehot': [3500, 'one_hot_encode(smile)'],

@@ -1,6 +1,6 @@
 import argparse
-from src.models.lstm import SwiftDock
-from src.utils.swift_dock_logger import swift_dock_logger
+from lstm import SwiftDock
+from swift_dock_logger import swift_dock_logger
 
 logger = swift_dock_logger()
 

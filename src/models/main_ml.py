@@ -2,8 +2,7 @@ import numpy as np
 import argparse
 import os
 
-from src.models.ml_models import OtherModels
-from src.utils.swift_dock_logger import swift_dock_logger
+from ml_models import OtherModels
 
 
 parser = argparse.ArgumentParser(description="train code for fast docking",

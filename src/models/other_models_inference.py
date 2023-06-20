@@ -1,6 +1,6 @@
 import argparse
-from src.models.ml_models import OtherModels
-from src.utils.swift_dock_logger import swift_dock_logger
+from ml_models import OtherModels
+from swift_dock_logger import swift_dock_logger
 
 logger = swift_dock_logger()
 

@@ -18,9 +18,9 @@ from sklearn import tree
 import pandas as pd
 import pickle
 
-from src.utils.create_fingerprint_data import create_features
-from src.utils.swift_dock_logger import swift_dock_logger
-from src.utils.utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
+from create_fingerprint_data import create_features
+from swift_dock_logger import swift_dock_logger
+from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 
 logger = swift_dock_logger()
 
