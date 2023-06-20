@@ -12,6 +12,7 @@ Additionally, several other models were also explored, including XGBoost, which 
 
 1. Make sure Python 3.7 is installed on your system
 2. Create a virtual environment and run  pip install -r requirements.txt
+3. Under swifty, run sudo chmod -R 777 logs
 ## Training Using LSTM
 ### First build a model and get validation results 
  There are many options to train the lstm model depending on the target, descriptor and training_size of your choice, you can also use 5 fold cross validation. So lets you have a csv file named 'docking_scores.csv' and you want use the mac descriptor and using 50 molecules selected randomly with 5 fold cross validation. Use this steps.
