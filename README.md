@@ -17,7 +17,7 @@ Additionally, several other models were also explored, including XGBoost, which 
 ### First build a model and get validation results 
  There are many options to train the lstm model depending on the target, descriptor and training_size of your choice, you can also use 5 fold cross validation. So lets you have a csv file named 'docking_scores.csv' and you want use the mac descriptor and using 50 molecules selected randomly with 5 fold cross validation. Use this steps.
 1. Put your target in the dataset folder. You should use the format of the sample test.csv target in the dataset folder.
-2. Example -  src/models run `python main_lstm.py --input docking_scores.csv --descriptors mac --training_sizes 50 --cross_validation True`. This will train a model using 50 molecules selected randomly from target 'docking_scores.csv' file using mac descriptor without 5 cross validation
+2. Example -  src/models run `python main_lstm.py --input docking_scores.csv --descriptors mac --training_sizes 50 --cross_validate True`. This will train a model using 50 molecules selected randomly from target 'docking_scores.csv' file using mac descriptor without 5 cross validation
 3. Above code will produce result directory with 5 folders. Each of the file names in these folders has a name beginning with this format - lstm_target_descriptor_training_size.
 - project_info - contains information such as training size and training times - Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_project_info.csv
 - serialized_models - contains the trained model after training -  Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_model.pt
