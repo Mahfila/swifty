@@ -31,7 +31,7 @@ Note that docking_scores.csv file should contain the following columns separated
 
 
 ### Making Prediction for your target using LSTM 
-Example, Under src/models,run `python other_models_inference.py --input_file molecules_for_prediction.csv  --output_dir prediction_results --model_name lstm_target_mac_50_model.pt`
+Example, Under src/models,run `python lstm_inference.py --input_file molecules_for_prediction.csv  --output_dir prediction_results --model_name lstm_target_mac_50_model.pt`
   -  --input_file - This is the file that contains molecules you want to predict the docking scores of. Make sure your input csv has the same format at molecules_for_prediction.csv (containing smiles of molecules) in the dataset folder. This file should be in the datasets folder
   -  --output_dir - Where you want the results to be saved
   -  --model_name - The model_name is the path to the model of your choice that you get after training that is saved in the previous step. Example 'lstm_target_mac_50_model.pt'. Make sure this file is in the serialized_models_models directory
