@@ -36,6 +36,7 @@ test_predictions_dir = '../../results/test_predictions/'
 project_info_dir = '../../results/project_info/'
 serialized_models_path = '../../results/serialized_models/'
 dataset_dir = "../../datasets"
+os.makedirs(training_metrics_dir, exist_ok=True)
 os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
 os.makedirs(project_info_dir, exist_ok=True)
