@@ -1,56 +1,65 @@
-# Swift Dock
+# Swift Dock 🚀
+
+In this study, we explored various machine learning (ML) models to forecast docking scores of ligands for specific target proteins, aiming to reduce the need for extensive docking calculations. Our primary goal? Find a regression model that can determine the docking scores of ligands from a chemical library in relation to a target protein. We achieve this with data from explicit docking of a select few molecules.
+
+Among the ML models:
+- 🧠 An **LSTM-based Neural Network** (common in Natural Language Processing tasks like speech recognition). Combined with an attention mechanism, it effectively extracts ligand data. We used Pytorch for this.
+- 🌳 Models like **XGBoost**, **Decision Tree Regression**, and **Stochastic Gradient Descent** from libraries like XGBoost and scikit-learn.
+
+## Setting up the Environment 🛠️
+
+1. Ensure Python 3.7 is installed 🐍
+2. Create a virtual environment and execute `pip install -r requirements.txt` 📦
+3. Navigate to 'swifty' and run `sudo chmod -R 777 logs` 📑
+
+## Training Using LSTM 🧠
+
+### Build & Validate 🛠️
+
+1. Add your target to the 'dataset' folder. Follow the format from `sample_input.csv`.
+2. Example: Navigate to `src/models` and run:
+```bash
+python main_lstm.py --input <YOUR_INPUT_FILE> --descriptors <DESCRIPTOR> --training_sizes <TRAINING_SIZE> --cross_validation <CROSS_VALIDATION> 
+```
+Example
+```bash
+python main_lstm.py --input sample_input --descriptors mac --training_sizes 50 --cross_validation False 
+```
+
+This will produce a result directory with 5 categories. Each file follows the format: lstm_target_descriptor_training_size.
+- **project_info**: Details like training size and durations.
+- **serialized_models**: Trained model post-training.
+- **test_predictions**: Each docking score and corresponding model prediction.
+- **testing_metrics**: Metrics such as R-squared, mean absolute error from testing.
+- **validation_metrics**: Metrics from 5-fold cross-validation (only if `--cross_validation True`).
+
+## Making Predictions with LSTM 🎯
+Example
+```bash
+python lstm_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
+```
+Example
+```bash
+python lstm_inference.py --input_file molecules_for_prediction.csv --output_dir prediction_results --model_name lstm_target_mac_50_model.pt
+```
+Ensure your input CSV follows the format of molecules_for_prediction.csv in the 'dataset' folder.
+
+## Training Using other models (from scikit-learn) 🌳
+1. Add your target to the 'dataset' folder. It should match the format of sample_input.csv
+2. Execute
+```bash
+python create_fingerprint_data.py --input sample_input --descriptors mac
+```
+3. python main_ml.py --input sample_input --descriptors mac --training_sizes 50 --regressor sgreg
+
+This will give you a result directory with similar categories and file formats as mentioned in the LSTM section.
+
+## Making Predictions with other Models 🎯
+1. Your input CSV should match the format of molecules_for_prediction.csv in the 'dataset' folder.
+2. Run
+```bash
+python other_models_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
+```
+Replace placeholders with appropriate values.
 
 
-In this study, various machine learning (ML) models were tested in an effort to forecast the docking scores of a ligand for a specific target protein, bypassing the need for detailed docking calculations. The primary objective is to identify a regression model capable of accurately determining the docking scores of ligands within a chemical library, relative to a target protein. This would be achieved using data derived from explicit docking of only a small selection of molecules.
-
-Among the ML models utilized is a neural network model based on Long Short-Term Memory (LSTM). LSTMs are typically deployed in the handling of sequence data within Natural Language Processing (NLP) contexts, such as speech recognition. The specific LSTM model employed in this study is combined with an attention mechanism to enable the neural network model to more effectively distill useful characteristics from incoming ligand data. Pytorch, a widely-used Python ML framework, was utilized to implement the LSTM.
-
-Additionally, several other models were also explored, including XGBoost, which was executed via the XGBoost Python library, as well as decision tree regression and stochastic gradient descent models drawn from the scikit-learn Python library.
-
-
-# Setting up the environment
-
-1. Make sure Python 3.7 is installed on your system
-2. Create a virtual environment and run  pip install -r requirements.txt
-3. Under swifty, run sudo chmod -R 777 logs
-## Training Using LSTM
-### First build a model and get validation results 
- There are many options to train the lstm model depending on the target, descriptor and training_size of your choice, you can also use 5 fold cross validation. So lets want use the mac descriptor and using 50 molecules selected randomly with 5 fold cross validation. Use this steps.
-1. Put your target in the dataset folder. You should use the format of the sample_input.csv target in the dataset folder.
-2. Example -  src/models run `python main_lstm.py --input sample_input --descriptors mac --training_sizes 50 --cross_validation False`. Note: You only need to input the name of the file,i.e, you do not have to include the extension (csv). This will train a model using 50 molecules selected randomly from target 'docking_scores.csv' file using mac descriptor without 5 cross validation
-3. Above code will produce result directory with 5 folders. Each of the file names in these folders has a name beginning with this format - lstm_target_descriptor_training_size.
-- project_info - contains information such as training size and training times - Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_project_info.csv
-- serialized_models - contains the trained model after training -  Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_model.pt
-- test_predictions - contains each docking score and its model prediction - Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_test_predictions.csv
-- testing_metrics - contains metrics (R-squared, mean absolute error) in testing - Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_test_metrics.csv
-- validation_metrics - contains metrics (R-squared, mean absolute error) in 5 fold cross validation - This result is only created when you set -- cross_validation True  - Has a format of {lstm}_{input_file_name}_{descriptor}_{training_size}_validation_metrics.csv
-
-
-### Making Prediction for your target using LSTM 
-Example, Under src/models,run `python lstm_inference.py --input_file molecules_for_prediction.csv  --output_dir prediction_results --model_name lstm_target_mac_50_model.pt`
-  -  --input_file - This is the file that contains molecules you want to predict the docking scores of. Make sure your input csv has the same format at molecules_for_prediction.csv (containing smiles of molecules) in the dataset folder. This file should be in the datasets folder
-  -  --output_dir - Where you want the results to be saved
-  -  --model_name - The model_name is the path to the model of your choice that you get after training that is saved in the previous step. Example 'lstm_target_mac_50_model.pt'. Make sure this file is in the serialized_models_models directory
-
-
-## Training Using other models (from scikit-learn)
-To train the models using other models other than lstm. If for example you want use the mac descriptor and a training size of 50 molecules with 5 fold cross validation. Use these steps.
-1. Put your target in the dataset folder. You should use the format of the sample_input.csv target in the dataset folder.
-2. Under src/models, run `python create_fingerprint_data.py --input sample_input --descriptors mac`. Note: You only need to input the name of the file, i.e, you do not have to include the extension (csv). This will create the dataset for the 'docking_scores.csv' using the mac descriptor.
-3. Next, under src/models run `python main_ml.py --input sample_input --descriptors mac --training_sizes 50 --regressor sgreg`. This will train the sgreg model using the molecules in docking_scores.csv for training size of 50 with for mac descriptor.
-4. Above code will produce a result directory with 5 folders. Below are the folders created
-- project_info - contains information such as training size and training times - Has a format of {model_name}_{input_file_name}_{descriptor}_{training_size}_project_info.csv
-- serialized_models - contains the trained model after training -  Has a format of {model_name}_{input_file_name}_{descriptor}_{training_size}_model.pt
-- test_predictions - contains each docking score and its model prediction - Has a format of {model_name}_{input_file_name}_{descriptor}_{training_size}_test_predictions.csv
-- testing_metrics - contains metrics (R-squared, mean absolute error) in testing - Has a format of {model_name}_{input_file_name}_{descriptor}_{training_size}_test_metrics.csv
-- validation_metrics - contains metrics (R-squared, mean absolute error) in 5 fold cross validation - This result is only created when you set -- cross_validation True  - Has a format of {model_name}_{input_file_name}_{descriptor}_{training_size}_validation_metrics.csv
-
-# Making Prediction for your target with other models (sgreg, xgboost, decision tree)
-1. For the molecules you want to predict the docking scores of. Make sure your input csv has the same format as molecules_for_prediction.csv in the dataset folder
-2. Under src/models, run `python other_models_inference.py --input_file --output_dir --model_name`
-- --input_file is the path to the your input 
-- --output_dir is the path where is the results are saved
-- --model_name is the path to the choice to make the docking score predictions. Example 'sgdreg_docking_scores_mac_50_model.pkl'
-
-
-python lstm_inference.py --input_file /Users/abdulsalamyazid/PycharmProjects/swifty/datasets/molecules_for_prediction.csv  --output_dir /Users/abdulsalamyazid/Desktop/RE --model_name /Users/abdulsalamyazid/PycharmProjects/swifty/results2/serialized_models/lstm_sample_input_mac_50_model.pt
