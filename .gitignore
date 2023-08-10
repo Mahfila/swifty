@@ -9,4 +9,5 @@ venv
 achieves
 main.py
 summarize_graphs.py
+*.pt
 
