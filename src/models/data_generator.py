@@ -15,7 +15,7 @@ class DataGenerator(Dataset):
         data = self.data_dict.iloc[idx]
         smile = str(data['smile'])
         score = data['docking_score']
-        features = eval(self.descriptor)
+        features = self.descriptor(smile)
         features = torch.from_numpy(features.reshape(features.shape[0], 1))
         score = torch.tensor([score])
         return features, score
@@ -32,6 +32,6 @@ class InferenceDataGenerator(Dataset):
     def __getitem__(self, idx):
         data = self.data_dict.iloc[idx]
         smile = str(data['smile'])
-        features = eval(self.descriptor)
+        features = self.descriptor(smile)
         features = torch.from_numpy(features.reshape(features.shape[0], 1))
         return features

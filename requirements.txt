@@ -9,3 +9,4 @@ tensorflow==2.7.0
 matplotlib_venn==0.11.6
 tqdm==4.65.0
 xgboost==1.6.0
+seaborn==0.12.2

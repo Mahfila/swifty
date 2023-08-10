@@ -1,21 +1,11 @@
-import time
-from sklearn.model_selection import KFold
-import numpy as np
-import time
 import os
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
+import time
+import numpy as np
+import pandas as pd
 from sklearn.model_selection import KFold
 from xgboost import XGBRegressor
 from sklearn.linear_model import SGDRegressor
-from sklearn.metrics import mean_squared_error
-from sklearn.metrics import r2_score
-from sklearn.metrics import mean_absolute_error
-from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.svm import SVR
-from sklearn import tree
-import pandas as pd
 import pickle
 
 from create_fingerprint_data import create_features
@@ -81,8 +71,8 @@ class OtherModels:
     def train(self):
         logger.info(f"Training has started for {self.identifier}")
         start_time_train = time.time()
-        rg = eval(self.regressor)
-        rg = rg.fit(self.x_train, self.y_train)
+        rg = self.regressor()  # Create an instance of the regressor
+        rg.fit(self.x_train, self.y_train)
         self.train_time = (time.time() - start_time_train) / 60
         self.single_regressor = rg
         identifier_model_path = f"{self.serialized_models_path}{self.identifier}_model.pkl"
@@ -101,8 +91,8 @@ class OtherModels:
         for big_index, small_index in kf.split(self.x_val):
             x_train_fold, x_test_fold = self.x_val[small_index], self.x_val[big_index]
             y_train_fold, y_test_fold = self.y_val[small_index], self.y_val[big_index]
-            rg = eval(self.regressor)
-            rg = rg.fit(x_train_fold, y_train_fold)
+            rg = self.regressor()  # Create an instance of the regressor
+            rg.fit(x_train_fold, y_train_fold)
             regressors_list.append(rg)
             predictions = rg.predict(x_test_fold)
             mse, mae, rsquared = calculate_metrics(predictions, y_test_fold)
@@ -167,15 +157,13 @@ class OtherModels:
         dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac': 4691 + 1,
                                 'mac': 167 + 1}
         new_dict = {descriptor: info[descriptor]}
-        create_features(['tmp.csv'], new_dict)
+        create_features(['tmp'], new_dict)
         os.remove(tmp_path)
         data_set_path = f'../../datasets/tmp_{descriptor}.dat'
         data = np.memmap(data_set_path, dtype=np.float32)
         target_length = data.shape[0] // dimensions_ml_models[descriptor]
         data = data.reshape((target_length, dimensions_ml_models[descriptor]))
         x, y = data[:, :-1], data[:, -1]
-        # delete the file
-        # Use the loaded model to make predictions
         predictions = pickle_model.predict(x)
         results_dict = {"smile": smiles, "docking_score": predictions}
         identifier_project_info = f"{output_path}/results.csv"
