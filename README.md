@@ -34,7 +34,7 @@ This will produce a result directory with 5 categories. Each file follows the fo
 - **validation_metrics**: Metrics from 5-fold cross-validation (only if `--cross_validation True`).
 
 ## Making Predictions with LSTM 🎯
-Example
+Run
 ```bash
 python lstm_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
 ```
@@ -46,11 +46,18 @@ Ensure your input CSV follows the format of molecules_for_prediction.csv in the 
 
 ## Training Using other models (from scikit-learn) 🌳
 1. Add your target to the 'dataset' folder. It should match the format of sample_input.csv
-2. Execute
+2. Run this command to prepare the dataset
 ```bash
 python create_fingerprint_data.py --input sample_input --descriptors mac
 ```
-3. python main_ml.py --input sample_input --descriptors mac --training_sizes 50 --regressor sgreg
+Example
+```bash
+```
+
+3. Run this to train
+```bash
+python main_ml.py --input sample_input --descriptors mac --training_sizes 50 --regressor sgreg
+```
 
 This will give you a result directory with similar categories and file formats as mentioned in the LSTM section.
 
@@ -59,6 +66,9 @@ This will give you a result directory with similar categories and file formats a
 2. Run
 ```bash
 python other_models_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
+```
+Example
+```bash
 ```
 Replace placeholders with appropriate values.
 
