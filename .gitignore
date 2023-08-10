@@ -7,4 +7,6 @@ venv
 /logs
 .idea
 achieves
+main.py
+summarize_graphs.py
 
