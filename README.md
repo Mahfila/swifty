@@ -38,11 +38,11 @@ Run
 ```bash
 python lstm_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
 ```
+Ensure than <YOUR_INPUT_FILE>  follows the format of molecules_for_prediction.csv in the 'dataset' folder.
 Example
 ```bash
 python lstm_inference.py --input_file molecules_for_prediction.csv --output_dir prediction_results --model_name lstm_target_mac_50_model.pt
 ```
-Ensure your input CSV follows the format of molecules_for_prediction.csv in the 'dataset' folder.
 
 ## Training Using other models (from scikit-learn) 🌳
 1. Add your target to the 'dataset' folder. It should match the format of sample_input.csv
@@ -56,6 +56,10 @@ Example
 
 3. Run this to train
 ```bash
+python main_ml.py --input <YOUR_INPUT_FILE> --descriptors <DESCRIPTOR> --training_sizes  <TRAINING_SIZE> --regressor  <REGRESSOR>
+```
+Example
+```bash
 python main_ml.py --input sample_input --descriptors mac --training_sizes 50 --regressor sgreg
 ```
 
@@ -67,9 +71,10 @@ This will give you a result directory with similar categories and file formats a
 ```bash
 python other_models_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YOUR_OUTPUT_DIRECTORY> --model_name <YOUR_MODEL_NAME>
 ```
+Ensure than <YOUR_INPUT_FILE>  follows the format of molecules_for_prediction.csv in the 'dataset' folder.
+
 Example
 ```bash
 ```
-Replace placeholders with appropriate values.
 
 
