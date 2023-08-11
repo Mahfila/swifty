@@ -73,8 +73,4 @@ python other_models_inference.py --input_file <YOUR_INPUT_FILE> --output_dir <YO
 ```
 Ensure than <YOUR_INPUT_FILE>  follows the format of molecules_for_prediction.csv in the 'dataset' folder.
 
-Example
-```bash
-```
-
 
