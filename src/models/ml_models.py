@@ -3,14 +3,12 @@ import time
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import KFold
-from xgboost import XGBRegressor
-from sklearn.linear_model import SGDRegressor
-from sklearn.tree import DecisionTreeRegressor
 import pickle
 
 from create_fingerprint_data import create_features
 from swift_dock_logger import swift_dock_logger
 from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
+from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode
 
 logger = swift_dock_logger()
 
@@ -151,9 +149,10 @@ class OtherModels:
             pickle_model, descriptor_dict = pickle.load(file)
         descriptor = descriptor_dict['descriptor']
         info = {
-            'onehot': [3500, 'one_hot_encode(smile)'],
-            'morgan_onehot_mac': [4691, 'morgan_fingerprints_mac_and_one_hot(smile)'],
-            'mac': [167, 'mac_keys_fingerprints(smile)']}
+            'onehot': [3500, one_hot_encode],
+            'morgan_onehot_mac': [4691, morgan_fingerprints_mac_and_one_hot],
+            'mac': [167, mac_keys_fingerprints]
+        }
         dimensions_ml_models = {'onehot': 3500 + 1, 'morgan_onehot_mac': 4691 + 1,
                                 'mac': 167 + 1}
         new_dict = {descriptor: info[descriptor]}
