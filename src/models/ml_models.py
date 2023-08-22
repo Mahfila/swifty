@@ -1,22 +1,28 @@
+import copy
 import os
 import time
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import KFold
+import shap
+from matplotlib import pyplot as plt
+from rdkit import Chem
+from sklearn.model_selection import KFold, train_test_split
 import pickle
+
+from sklearn.preprocessing import StandardScaler
 
 from create_fingerprint_data import create_features
 from swift_dock_logger import swift_dock_logger
 from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
-from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode
+from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode, compute_descriptors
 
 logger = swift_dock_logger()
 
 
 class OtherModels:
-    def __init__(self, training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+    def __init__(self, training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, shap_analyses_dir,
                  all_data, train_size, test_size, val_size, identifier, number_of_folds, regressor,
-                 serialized_models_path, descriptor):
+                 serialized_models_path, descriptor, data_csv):
         self.all_data = all_data
         self.training_metrics_dir = training_metrics_dir
         self.testing_metrics_dir = testing_metrics_dir
@@ -30,6 +36,8 @@ class OtherModels:
         self.regressor = regressor
         self.serialized_models_path = serialized_models_path
         self.descriptor = descriptor
+        self.shap_analyses_dir = shap_analyses_dir
+        self.data_csv = data_csv
         self.x = None
         self.y = None
         self.x_train = None
@@ -46,6 +54,9 @@ class OtherModels:
         self.test_time = None
         self.train_time = None
         self.single_regressor = None
+        self.test_for_shap_analyses = None
+        self.model_for_shap_analyses = copy.deepcopy(regressor())
+        self.scaler = StandardScaler()
 
     def split_data(self, cross_validate):
         if cross_validate:
@@ -78,6 +89,13 @@ class OtherModels:
         with open(identifier_model_path, 'wb') as file:
             pickle.dump((rg, descriptor_dict), file)
         logger.info(f"Training is Done! {self.identifier}")
+
+        data_df = pd.read_csv(self.data_csv)
+        train, self.test_for_shap_analyses = train_test_split(data_df, test_size=self.test_size, random_state=42)
+        train_smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in train['smile']]
+        train_docking_scores = train['docking_score'].tolist()
+        normalized_descriptors = self.scaler.fit_transform(train_smiles)
+        self.model_for_shap_analyses.fit(normalized_descriptors, train_docking_scores)
 
     def diagnose(self):
         logger.info(f"Validation has started for {self.identifier}")
@@ -122,6 +140,59 @@ class OtherModels:
         self.test_predictions_and_target_df = predictions_and_target_df
         logger.info(f"Testing is Done! {self.identifier}")
         return all_models_predictions
+
+    def shap_analyses(self):
+        smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in self.test_for_shap_analyses['smile']]
+        normalized_descriptors = self.scaler.fit_transform(smiles)
+        def model_predict(smiles):
+            return self.model_for_shap_analyses.predict(smiles)
+
+        # Create a masker for the dataset
+        masker = shap.maskers.Independent(data=normalized_descriptors)
+        explainer = shap.explainers.Permutation(model_predict, masker)
+        shap_values = explainer.shap_values(normalized_descriptors)
+
+        # File paths for output
+        shap_analyses_csv_dir = f"{self.shap_analyses_dir}{self.identifier}_shap_analyses.csv"
+        shap_analyses_summary_plot = f"{self.shap_analyses_dir}{self.identifier}_shap_summary_plot.png"
+        shap_analyses_feature_importance = f"{self.shap_analyses_dir}{self.identifier}_shap_feature_importance.png"
+        feature_names = [
+            "mol_weight",
+            "num_atoms",
+            "num_bonds",
+            "num_rotatable_bonds",
+            "num_h_donors",
+            "num_h_acceptors",
+            "logp",
+            "mr",
+            "tpsa",
+            "num_rings",
+            "num_aromatic_rings",
+            "hall_kier_alpha",
+            "fraction_csp3",
+            "num_nitrogens",
+            "num_oxygens",
+            "num_sulphurs"
+        ]
+
+        # Convert normalized_descriptors to DataFrame with feature names
+        normalized_descriptors_df = pd.DataFrame(normalized_descriptors, columns=feature_names)
+
+        # SHAP DataFrame
+        shap_df = pd.DataFrame(shap_values, columns=feature_names)
+        avg_shap = shap_df.abs().mean().sort_values(ascending=False)
+        avg_shap.to_csv(shap_analyses_csv_dir)
+
+        # Generate and save SHAP plots
+        shap.summary_plot(shap_values, normalized_descriptors_df,plot_type="dot",  show=False)
+        plt.gcf().tight_layout()
+        plt.gcf().savefig(shap_analyses_summary_plot)
+        plt.close()
+
+        shap.summary_plot(shap_values, normalized_descriptors_df, plot_type="bar", show=False)
+        plt.gcf().tight_layout()
+        plt.gcf().savefig(shap_analyses_feature_importance)
+        plt.close()
 
     def save_results(self):
         identifier_test_metrics = f"{self.testing_metrics_dir}{self.identifier}_test_metrics.csv"

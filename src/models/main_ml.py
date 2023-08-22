@@ -12,6 +12,7 @@ testing_metrics_dir = '../../results2/testing_metrics/'
 test_predictions_dir = '../../results2/test_predictions/'
 project_info_dir = '../../results2/project_info/'
 serialized_models_path = '../../results2/serialized_models/'
+shap_analyses_dir = '../../results2/shap_analyses/'
 dataset_dir = "../../datasets/"
 
 os.makedirs(training_metrics_dir, exist_ok=True)
@@ -19,7 +20,7 @@ os.makedirs(testing_metrics_dir, exist_ok=True)
 os.makedirs(test_predictions_dir, exist_ok=True)
 os.makedirs(project_info_dir, exist_ok=True)
 os.makedirs(serialized_models_path, exist_ok=True)
-
+os.makedirs(shap_analyses_dir, exist_ok=True)
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -30,13 +31,13 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
-def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,shap_analyses_dir,
              all_data, train_size, test_size, val_size, identifier, number_of_folds, regressor, serialized_models_path,
-             descriptor):
-    model = OtherModels(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+             descriptor, data_csv):
+    model = OtherModels(training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,shap_analyses_dir,
                         all_data=all_data, train_size=train_size, test_size=test_size, val_size=val_size,
                         identifier=identifier, number_of_folds=number_of_folds, regressor=regressor,
-                        serialized_models_path=serialized_models_path, descriptor=descriptor)
+                        serialized_models_path=serialized_models_path, descriptor=descriptor, data_csv=data_csv)
 
     model.split_data(cross_validate=args.cross_validate)
     model.train()
@@ -44,6 +45,7 @@ def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, pr
     if args.cross_validate:
         model.diagnose()
     model.test()
+    model.shap_analyses()
     model.save_results()
 
 
@@ -87,6 +89,7 @@ if __name__ == '__main__':
             for data_file, data_dim in descriptors_dictionary_command_line.items():
                 for size in training_sizes_ml:
                     data_set_path = f"{dataset_dir}{target}_{data_file}.dat"
+                    data_csv = f"{dataset_dir}{target}.csv"
                     identifier = f"{regressor_id}_{target}_{data_file}_{str(size)}"
                     data = np.memmap(data_set_path, dtype=np.float32)
                     target_length = data.shape[0] // data_dim
@@ -97,7 +100,8 @@ if __name__ == '__main__':
 
                     train_ml(training_metrics_dir=training_metrics_dir, testing_metrics_dir=testing_metrics_dir,
                              test_predictions_dir=test_predictions_dir, project_info_dir=project_info_dir,
+                             shap_analyses_dir=shap_analyses_dir,
                              all_data=data, train_size=size, test_size=testing_size_ml, val_size=val_size,
                              identifier=identifier,
                              number_of_folds=number_of_folds, regressor=regressor,
-                             serialized_models_path=serialized_models_path, descriptor=data_file)
+                             serialized_models_path=serialized_models_path, descriptor=data_file, data_csv=data_csv)
