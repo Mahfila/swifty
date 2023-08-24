@@ -5,12 +5,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import torch
-from rdkit import DataStructs
+from rdkit import DataStructs, Chem
+from rdkit.Chem import AllChem
+from rdkit.DataStructs import ExplicitBitVect
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
 from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
+
+from src.models.smiles_featurizers import morgan_fingerprints_mac_and_one_hot, one_hot_encode, mac_keys_fingerprints
 
 mpl.rcParams['figure.dpi'] = 300
 
@@ -168,3 +172,63 @@ def save_dict_with_one_index(history, identifier):
 
 def calculate_tanimoto_distance(smile1, smile2):
     return DataStructs.FingerprintSimilarity(smile1, smile2)
+
+
+def morgan_fingerprints_mac_and_one_hot_bitvect(smile):
+    # Get the Morgan fingerprint
+    m1 = Chem.MolFromSmiles(smile)
+    fingerprint = AllChem.GetMorganFingerprintAsBitVect(m1, 1, nBits=1024).ToBitString()
+
+    # Get the one-hot encoding
+    one_hot = one_hot_encode(smile).astype(int).tolist()
+
+    # Get the MACCS keys
+    mac_keys = mac_keys_fingerprints(smile).astype(int).tolist()
+
+    # Combine them in the order: fingerprint, one-hot, MACCS
+    combined = fingerprint + ''.join(map(str, one_hot)) + ''.join(map(str, mac_keys))
+
+    # Convert to ExplicitBitVect for RDKit compatibility
+    combined_bitvect = ExplicitBitVect(len(combined))
+    for i, bit in enumerate(combined):
+        combined_bitvect.SetBit(i) if int(bit) else combined_bitvect.UnSetBit(i)
+
+    return combined_bitvect
+
+
+def calculate_tanimoto_similarity(smile1, smile2):
+    fp1 = morgan_fingerprints_mac_and_one_hot_bitvect(smile1)
+    fp2 = morgan_fingerprints_mac_and_one_hot_bitvect(smile2)
+    return DataStructs.TanimotoSimilarity(fp1, fp2)
+
+
+def get_most_similar_structure(test_data, training_data):
+    max_similarity = -float('inf')
+    most_similar_structure = None
+    for index, train_fp in training_data.iterrows():
+        train_smile = train_fp['smile']
+        test_smile = test_data['smile']
+        similarity = calculate_tanimoto_similarity(test_smile, train_smile)
+        if similarity > max_similarity:
+            max_similarity = similarity
+            most_similar_structure = train_fp
+    return most_similar_structure
+
+
+def correlate_predictions(test_data, training_data, model):
+    predictions = []
+    actual_values = []
+    for test_fp in test_data:
+        most_similar_structure = get_most_similar_structure(test_fp, training_data)
+        prediction = model.predict([test_fp])[0]
+        actual_value = most_similar_structure['target']
+        predictions.append(prediction)
+        actual_values.append(actual_value)
+    correlation_coefficient = np.corrcoef(predictions, actual_values)[0, 1]
+    return correlation_coefficient
+
+
+def get_fingerprint(smiles_string):
+    """Generate Morgan fingerprint for a given SMILES string."""
+    molecule = Chem.MolFromSmiles(smiles_string)
+    return AllChem.GetMorganFingerprintAsBitVect(molecule, 2)

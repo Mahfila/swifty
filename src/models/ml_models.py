@@ -5,7 +5,9 @@ import numpy as np
 import pandas as pd
 import shap
 from matplotlib import pyplot as plt
-from rdkit import Chem
+from rdkit import Chem, DataStructs
+from rdkit.Chem import AllChem, MACCSkeys
+from sklearn.manifold import TSNE
 from sklearn.model_selection import KFold, train_test_split
 import pickle
 
@@ -13,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 from create_fingerprint_data import create_features
 from swift_dock_logger import swift_dock_logger
-from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
+from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict, get_most_similar_structure
 from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode, compute_descriptors
 
 logger = swift_dock_logger()
@@ -57,6 +59,7 @@ class OtherModels:
         self.test_for_shap_analyses = None
         self.model_for_shap_analyses = copy.deepcopy(regressor())
         self.scaler = StandardScaler()
+        self.train_for_shap_analyses = None
 
     def split_data(self, cross_validate):
         if cross_validate:
@@ -91,9 +94,9 @@ class OtherModels:
         logger.info(f"Training is Done! {self.identifier}")
 
         data_df = pd.read_csv(self.data_csv)
-        train, self.test_for_shap_analyses = train_test_split(data_df, test_size=self.test_size, random_state=42)
-        train_smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in train['smile']]
-        train_docking_scores = train['docking_score'].tolist()
+        self.train_for_shap_analyses, self.test_for_shap_analyses = train_test_split(data_df, test_size=self.test_size, random_state=42)
+        train_smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in self.train_for_shap_analyses['smile']]
+        train_docking_scores = self.train_for_shap_analyses['docking_score'].tolist()
         normalized_descriptors = self.scaler.fit_transform(train_smiles)
         self.model_for_shap_analyses.fit(normalized_descriptors, train_docking_scores)
 
@@ -144,6 +147,7 @@ class OtherModels:
     def shap_analyses(self):
         smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in self.test_for_shap_analyses['smile']]
         normalized_descriptors = self.scaler.fit_transform(smiles)
+
         def model_predict(smiles):
             return self.model_for_shap_analyses.predict(smiles)
 
@@ -184,7 +188,7 @@ class OtherModels:
         avg_shap.to_csv(shap_analyses_csv_dir)
 
         # Generate and save SHAP plots
-        shap.summary_plot(shap_values, normalized_descriptors_df,plot_type="dot",  show=False)
+        shap.summary_plot(shap_values, normalized_descriptors_df, plot_type="dot", show=False)
         plt.gcf().tight_layout()
         plt.gcf().savefig(shap_analyses_summary_plot)
         plt.close()
@@ -193,6 +197,57 @@ class OtherModels:
         plt.gcf().tight_layout()
         plt.gcf().savefig(shap_analyses_feature_importance)
         plt.close()
+
+    def evaluate_structural_diversity(self):
+        tsne_visualization_dir = f"{self.shap_analyses_dir}{self.identifier}_tsne_visualization.png"
+        tsne_dir = f"{self.shap_analyses_dir}{self.identifier}_tsne_data.csv"
+
+        def __get_circular_fingerprints(data):
+            fps = []
+            for smile in data['smile']:
+                mol = Chem.MolFromSmiles(smile)
+                fp = AllChem.GetMorganFingerprintAsBitVect(mol, 2, nBits=2048)
+                arr = np.zeros((1,))
+                DataStructs.ConvertToNumpyArray(fp, arr)
+                fps.append(arr)
+            return np.array(fps)
+
+        def __get_mac_fingerprints(data):
+            fps = []
+            for smile in data['smile']:
+                mol = Chem.MolFromSmiles(smile)
+                if mol is None:  # Invalid SMILES string
+                    print(f"Warning: Invalid SMILES skipped: {smile}")
+                    continue
+                maccs_key = MACCSkeys.GenMACCSKeys(mol)
+                arr = np.zeros((1,), dtype=np.int8)
+                DataStructs.ConvertToNumpyArray(maccs_key, arr)
+                fps.append(arr)
+            return np.array(fps)
+
+        # Assuming train_for_shap_analyses and test_for_shap_analyses are your training and test DataFrames
+        train_fps = __get_mac_fingerprints(self.train_for_shap_analyses)
+        test_fps = __get_mac_fingerprints(self.test_for_shap_analyses)
+
+        # 2. t-SNE Dimensionality Reduction
+        all_fps = np.vstack([train_fps, test_fps])
+        tsne = TSNE(n_components=2, random_state=42).fit_transform(all_fps)
+
+        # Save t-SNE data to the directory specified in 'tsne_dir' as a CSV file
+        pd.DataFrame(tsne, columns=['Dimension_1', 'Dimension_2']).to_csv(tsne_dir, index=False)
+
+        # 3. Visualization
+        plt.figure(figsize=(10, 7))
+        plt.scatter(tsne[:len(train_fps), 0], tsne[:len(train_fps), 1], color='blue', label='Training Data', alpha=0.5)
+        plt.scatter(tsne[len(train_fps):, 0], tsne[len(train_fps):, 1], color='red', label='Test Data', alpha=0.5)
+        plt.legend(loc='upper right')
+        plt.xlabel('t-SNE Component 1')
+        plt.ylabel('t-SNE Component 2')
+        plt.title('t-SNE Visualization of Training vs Test Data')
+
+        # Save dat
+        plt.savefig(tsne_visualization_dir, dpi=300, bbox_inches='tight')
+        pd.DataFrame(tsne, columns=['Dimension_1', 'Dimension_2']).to_csv(tsne_dir, index=False)
 
     def save_results(self):
         identifier_test_metrics = f"{self.testing_metrics_dir}{self.identifier}_test_metrics.csv"

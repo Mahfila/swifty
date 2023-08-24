@@ -46,6 +46,7 @@ def train_ml(training_metrics_dir, testing_metrics_dir, test_predictions_dir, pr
         model.diagnose()
     model.test()
     model.shap_analyses()
+    model.evaluate_structural_diversity()
     model.save_results()
 
 

@@ -8,7 +8,6 @@ from rdkit.Chem import Lipinski
 from rdkit.Chem import MACCSkeys
 
 
-
 def circular_fingerprint(smile):
     descriptor = dc.feat.CircularFingerprint(size=64, radius=5)
     features = descriptor.featurize(smile).reshape(64, )
@@ -82,11 +81,11 @@ def compute_descriptors(mol):
     descriptors["num_aromatic_rings"] = Descriptors.NumAromaticRings(mol)
     descriptors["hall_kier_alpha"] = Descriptors.HallKierAlpha(mol)
     descriptors["fraction_csp3"] = Descriptors.FractionCSP3(mol)
-    descriptors["num_nitrogens"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#7]")))
-    descriptors["num_oxygens"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#8]")))
-    descriptors["num_sulphurs"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#16]")))
+    descriptors["num_nitrogens"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(
+        Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#7]")))
+    descriptors["num_oxygens"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(
+        Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#8]")))
+    descriptors["num_sulphurs"] = Descriptors.NumValenceElectrons(mol) - Descriptors.NumValenceElectrons(
+        Chem.DeleteSubstructs(mol, Chem.MolFromSmarts("[#16]")))
 
     return descriptors
-
-
-
