@@ -1,28 +1,32 @@
 import copy
 import os
+import pickle
 import time
+
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import shap
 from matplotlib import pyplot as plt
 from rdkit import Chem, DataStructs
 from rdkit.Chem import AllChem, MACCSkeys
+from rdkit.Chem import Descriptors
 from sklearn.manifold import TSNE
 from sklearn.model_selection import KFold, train_test_split
-import pickle
-
 from sklearn.preprocessing import StandardScaler
 
 from create_fingerprint_data import create_features
+from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode, \
+    compute_descriptors
 from swift_dock_logger import swift_dock_logger
-from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict, get_most_similar_structure
-from smiles_featurizers import morgan_fingerprints_mac_and_one_hot, mac_keys_fingerprints, one_hot_encode, compute_descriptors
+from utils import calculate_metrics, create_test_metrics, create_fold_predictions_and_target_df, save_dict
 
 logger = swift_dock_logger()
 
 
 class OtherModels:
-    def __init__(self, training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir, shap_analyses_dir,
+    def __init__(self, training_metrics_dir, testing_metrics_dir, test_predictions_dir, project_info_dir,
+                 shap_analyses_dir,
                  all_data, train_size, test_size, val_size, identifier, number_of_folds, regressor,
                  serialized_models_path, descriptor, data_csv):
         self.all_data = all_data
@@ -94,8 +98,10 @@ class OtherModels:
         logger.info(f"Training is Done! {self.identifier}")
 
         data_df = pd.read_csv(self.data_csv)
-        self.train_for_shap_analyses, self.test_for_shap_analyses = train_test_split(data_df, test_size=self.test_size, random_state=42)
-        train_smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in self.train_for_shap_analyses['smile']]
+        self.train_for_shap_analyses, self.test_for_shap_analyses = train_test_split(data_df, test_size=self.test_size,
+                                                                                     random_state=42)
+        train_smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in
+                        self.train_for_shap_analyses['smile']]
         train_docking_scores = self.train_for_shap_analyses['docking_score'].tolist()
         normalized_descriptors = self.scaler.fit_transform(train_smiles)
         self.model_for_shap_analyses.fit(normalized_descriptors, train_docking_scores)
@@ -145,7 +151,8 @@ class OtherModels:
         return all_models_predictions
 
     def shap_analyses(self):
-        smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in self.test_for_shap_analyses['smile']]
+        smiles = [list(compute_descriptors(Chem.MolFromSmiles(smile)).values()) for smile in
+                  self.test_for_shap_analyses['smile']]
         normalized_descriptors = self.scaler.fit_transform(smiles)
 
         def model_predict(smiles):
@@ -248,6 +255,44 @@ class OtherModels:
         # Save dat
         plt.savefig(tsne_visualization_dir, dpi=300, bbox_inches='tight')
         pd.DataFrame(tsne, columns=['Dimension_1', 'Dimension_2']).to_csv(tsne_dir, index=False)
+
+    def plot_docking_vs_mol_weight(self):
+        logger.info(f"Started creating plot for mol weights of {self.identifier}")
+        size_cor_plot_dir = f"{self.shap_analyses_dir}{self.identifier}_mol_weight.png"
+        df = pd.read_csv(self.data_csv)
+        mol_weights = []
+        for smile in df['smile']:
+            mol = Chem.MolFromSmiles(smile)
+            mol_weight = Descriptors.MolWt(mol)
+            mol_weights.append(mol_weight)
+
+            # Add the molecular weights as a new column to the DataFrame
+        df['mol_weight'] = mol_weights
+
+        # Create a scatter plot
+        plt.figure(figsize=(10, 6))
+
+        # Uncomment the following line for a simple scatter plot with smaller, transparent points
+        # plt.scatter(df['mol_weight'], df['docking_score'], alpha=0.1, s=10)
+
+        # Uncomment the following lines for a hexbin plot
+        # hb = plt.hexbin(df['mol_weight'], df['docking_score'], gridsize=50, cmap='inferno')
+        # cb = plt.colorbar(hb)
+        # cb.set_label('Density')
+
+        # Uncomment the following lines for a 2D density plot
+        sns.kdeplot(x=df['mol_weight'], y=df['docking_score'], cmap='inferno', fill=True)
+
+        plt.title('Docking Score vs Molecular Weight')
+        plt.xlabel('Molecular Weight')
+        plt.ylabel('Docking Score')
+        plt.grid(True)
+
+        # Save the figure
+        plt.savefig(size_cor_plot_dir)
+
+        # Show the plot
+        plt.show()
 
     def save_results(self):
         identifier_test_metrics = f"{self.testing_metrics_dir}{self.identifier}_test_metrics.csv"

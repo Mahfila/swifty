@@ -11,10 +11,11 @@ from rdkit.DataStructs import ExplicitBitVect
 from sklearn.metrics import mean_absolute_error
 from sklearn.metrics import mean_squared_error
 from sklearn.metrics import r2_score
-from torch.utils.data import Dataset
 from sklearn.model_selection import train_test_split
+from torch.utils.data import Dataset
 
-from src.models.smiles_featurizers import morgan_fingerprints_mac_and_one_hot, one_hot_encode, mac_keys_fingerprints
+from smiles_featurizers import one_hot_encode, mac_keys_fingerprints
+
 
 mpl.rcParams['figure.dpi'] = 300
 

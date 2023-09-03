@@ -1,4 +1,3 @@
-import deepchem as dc
 import numpy as np
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -7,12 +6,22 @@ from rdkit.Chem import Descriptors
 from rdkit.Chem import Lipinski
 from rdkit.Chem import MACCSkeys
 
+ZINC_CHARSET = [
+    '#', ')', '(', '+', '-', '/', '1', '3', '2', '5', '4', '7', '6', '8', '=',
+    '@', 'C', 'B', 'F', 'I', 'H', 'O', 'N', 'S', '[', ']', '\\', 'c', 'l', 'o',
+    'n', 'p', 's', 'r'
+]
 
-def circular_fingerprint(smile):
-    descriptor = dc.feat.CircularFingerprint(size=64, radius=5)
-    features = descriptor.featurize(smile).reshape(64, )
-    features = features.astype('float32')
-    return features
+
+def one_hot_encode(smiles, max_length=100, charset=ZINC_CHARSET):
+    one_hot = np.zeros((max_length, len(charset) + 1), dtype=np.float32)
+    smiles = smiles[:max_length].ljust(max_length)
+    for i, char in enumerate(smiles):
+        try:
+            one_hot[i, charset.index(char)] = 1.0
+        except ValueError:  # char is not in charset
+            one_hot[i, -1] = 1.0  # Unknown character column
+    return one_hot.flatten()
 
 
 def mac_keys_fingerprints(smile):
@@ -23,13 +32,6 @@ def mac_keys_fingerprints(smile):
     chars_array = np.array([list1])
     chars_array = chars_array.astype('float32')
     return chars_array.reshape(167)
-
-
-def one_hot_encode(smile):
-    descriptor = dc.feat.OneHotFeaturizer()
-    encodings = descriptor.featurize(smile).reshape(3500, )
-    encodings = encodings.astype('float32')
-    return encodings
 
 
 def morgan_fingerprints(smile):
